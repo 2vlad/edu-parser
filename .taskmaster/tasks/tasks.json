@@ -65,7 +65,7 @@
         "dependencies": [
           1
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -84,7 +84,7 @@
               "2.1"
             ],
             "details": "Run the CREATE TABLE statement for applicant_counts including UUID primary key, foreign key reference to scraper_id, status check constraint, date columns with defaults, and create indexes on (scraper_id, date) and synced_to_sheets columns for query performance",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -95,7 +95,7 @@
               "2.1"
             ],
             "details": "Create table with columns: id (TEXT PRIMARY KEY), name, university, type (web/excel), url, enabled (BOOLEAN), created_at, and updated_at timestamps. Add unique constraint on (university, name) combination",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -106,7 +106,7 @@
               "2.3"
             ],
             "details": "Insert rows for HSE (excel type), ITMO (web type), and Innopolis (web type) scrapers with their respective URLs, enable flags set to true, and appropriate metadata",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -119,7 +119,7 @@
               "2.4"
             ],
             "details": "Write Python script to connect using supabase-py client, test INSERT into both tables, SELECT with filters, UPDATE operations, and verify foreign key constraints work correctly between tables",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -755,7 +755,7 @@
     ],
     "metadata": {
       "created": "2025-07-22T15:17:40.038Z",
-      "updated": "2025-07-22T16:36:59.547Z",
+      "updated": "2025-07-22T16:41:23.877Z",
       "description": "Tasks for master context"
     }
   }
