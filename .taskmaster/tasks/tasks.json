@@ -1,0 +1,762 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Structure and Dependencies",
+        "description": "Initialize Python project with required directory structure, install dependencies, and configure environment variables for Railway and Supabase",
+        "details": "Create project structure:\n```\nedu-parser/\n├── scrapers/\n│   ├── __init__.py\n│   ├── hse.py\n│   ├── mipt.py\n│   └── mephi.py\n├── core/\n│   ├── __init__.py\n│   ├── storage.py\n│   ├── runner.py\n│   └── registry.py\n├── sync/\n│   ├── __init__.py\n│   └── sheets_sync.py\n├── main.py\n├── sheets_sync_job.py\n├── requirements.txt\n├── .env.example\n└── .gitignore\n```\n\nInstall dependencies:\n```bash\npip install httpx beautifulsoup4 pandas supabase python-dotenv openpyxl lxml\n```\n\nCreate .env file with:\n```\nSUPABASE_URL=your_url\nSUPABASE_KEY=your_key\n```",
+        "testStrategy": "Verify project structure exists, all dependencies install without conflicts, and environment variables are properly loaded using python-dotenv",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create directory structure with all required folders and __init__.py files",
+            "description": "Create the complete project directory structure including all subdirectories (scrapers/, core/, sync/) and their respective __init__.py files to make them proper Python packages",
+            "dependencies": [],
+            "details": "Execute mkdir commands to create edu-parser/ root directory, then create scrapers/, core/, and sync/ subdirectories. Create empty __init__.py files in each subdirectory to make them importable Python packages. Also create placeholder files for main.py and sheets_sync_job.py in the root directory.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create requirements.txt with all dependencies and versions",
+            "description": "Create a requirements.txt file listing all project dependencies with specific version numbers for reproducible builds",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Create requirements.txt with the following dependencies: httpx==0.24.1, beautifulsoup4==4.12.2, pandas==2.0.3, supabase==1.0.3, python-dotenv==1.0.0, openpyxl==3.1.2, lxml==4.9.3. Include comments explaining the purpose of each dependency group (web scraping, data processing, database, environment management).",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create .env.example with template variables and documentation",
+            "description": "Create a .env.example file containing all required environment variables with placeholder values and detailed documentation",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Create .env.example with template variables: SUPABASE_URL=your_supabase_url_here, SUPABASE_KEY=your_supabase_anon_key_here, GOOGLE_SHEETS_ID=your_google_sheets_id_here, GOOGLE_CREDENTIALS_PATH=path_to_service_account_json. Add comments explaining each variable's purpose, where to find the values, and any formatting requirements.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure .gitignore for Python projects including common patterns",
+            "description": "Create a comprehensive .gitignore file with Python-specific patterns and project-specific exclusions",
+            "dependencies": [
+              "1.1"
+            ],
+            "details": "Create .gitignore with standard Python patterns: __pycache__/, *.py[cod], *$py.class, *.so, .Python, env/, venv/, .env, *.log. Include IDE-specific patterns (.vscode/, .idea/, *.swp), OS-specific files (.DS_Store, Thumbs.db), and project-specific exclusions (logs/, *.xlsx output files, google-credentials.json).",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Configure Supabase Database Schema",
+        "description": "Create required tables in Supabase with proper schema for storing applicant counts and scraper configuration",
+        "details": "Execute SQL in Supabase:\n```sql\n-- Create applicant_counts table\nCREATE TABLE applicant_counts (\n    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n    scraper_id TEXT NOT NULL,\n    name TEXT NOT NULL,\n    count INTEGER,\n    status TEXT NOT NULL CHECK (status IN ('success', 'error')),\n    error TEXT,\n    date DATE NOT NULL DEFAULT CURRENT_DATE,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    synced_to_sheets BOOLEAN DEFAULT FALSE\n);\n\n-- Create scrapers_config table\nCREATE TABLE scrapers_config (\n    scraper_id TEXT PRIMARY KEY,\n    name TEXT NOT NULL,\n    enabled BOOLEAN DEFAULT TRUE,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\n-- Create indexes\nCREATE INDEX idx_applicant_counts_date ON applicant_counts(date);\nCREATE INDEX idx_applicant_counts_scraper ON applicant_counts(scraper_id);\n```",
+        "testStrategy": "Connect to Supabase using the Python client, verify tables exist with correct schema, and perform test insert/select operations",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Connect to Supabase and Create Project",
+            "description": "Access Supabase dashboard, create a new project if needed, and obtain database connection credentials",
+            "dependencies": [],
+            "details": "Navigate to Supabase dashboard, create new project with appropriate name, wait for provisioning to complete, copy the database URL and service role key for environment variables",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Create applicant_counts Table",
+            "description": "Execute SQL to create the applicant_counts table with all required columns, constraints, and indexes",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Run the CREATE TABLE statement for applicant_counts including UUID primary key, foreign key reference to scraper_id, status check constraint, date columns with defaults, and create indexes on (scraper_id, date) and synced_to_sheets columns for query performance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create scrapers_config Table",
+            "description": "Execute SQL to create the scrapers_config table for storing scraper metadata and configuration",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "Create table with columns: id (TEXT PRIMARY KEY), name, university, type (web/excel), url, enabled (BOOLEAN), created_at, and updated_at timestamps. Add unique constraint on (university, name) combination",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Insert Initial Scraper Configuration Data",
+            "description": "Populate scrapers_config table with configuration entries for all university scrapers",
+            "dependencies": [
+              "2.3"
+            ],
+            "details": "Insert rows for HSE (excel type), ITMO (web type), and Innopolis (web type) scrapers with their respective URLs, enable flags set to true, and appropriate metadata",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Verify Database Connectivity and Test Operations",
+            "description": "Test database connection from Python using Supabase client and perform CRUD operations",
+            "dependencies": [
+              "2.2",
+              "2.3",
+              "2.4"
+            ],
+            "details": "Write Python script to connect using supabase-py client, test INSERT into both tables, SELECT with filters, UPDATE operations, and verify foreign key constraints work correctly between tables",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Implement Core Storage Module",
+        "description": "Create storage.py module for interacting with Supabase database with error handling and connection management",
+        "details": "Implement core/storage.py:\n```python\nimport os\nfrom datetime import date\nfrom supabase import create_client, Client\nfrom typing import Dict, List, Optional\nimport logging\n\nlogger = logging.getLogger(__name__)\n\nclass Storage:\n    def __init__(self):\n        url = os.environ.get('SUPABASE_URL')\n        key = os.environ.get('SUPABASE_KEY')\n        self.client: Client = create_client(url, key)\n    \n    def save_result(self, result: Dict) -> bool:\n        try:\n            data = {\n                'scraper_id': result['scraper_id'],\n                'name': result['name'],\n                'count': result.get('count'),\n                'status': result['status'],\n                'error': result.get('error'),\n                'date': date.today().isoformat()\n            }\n            self.client.table('applicant_counts').insert(data).execute()\n            return True\n        except Exception as e:\n            logger.error(f\"Failed to save result: {e}\")\n            return False\n    \n    def get_enabled_scrapers(self) -> List[Dict]:\n        try:\n            response = self.client.table('scrapers_config')\\\n                .select('*')\\\n                .eq('enabled', True)\\\n                .execute()\n            return response.data\n        except Exception as e:\n            logger.error(f\"Failed to get scrapers: {e}\")\n            return []\n```",
+        "testStrategy": "Unit test each method with mock data, verify database operations work correctly, test error handling with invalid data",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Storage class initialization with Supabase client setup",
+            "description": "Create the Storage class constructor that initializes the Supabase client with proper environment variable handling and connection validation",
+            "dependencies": [],
+            "details": "Implement __init__ method that reads SUPABASE_URL and SUPABASE_KEY from environment variables, creates Supabase client instance, validates connection is established, and handles missing environment variables gracefully with appropriate error messages",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement save_result method with proper error handling and data validation",
+            "description": "Create the save_result method that validates input data, formats it correctly for database insertion, and handles all potential errors",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Implement method that accepts result dictionary, validates required fields (university, program, count, date), formats data for Supabase insertion, executes insert operation with proper error handling, implements retry logic for transient failures, and returns boolean success status",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement get_enabled_scrapers method with filtering logic",
+            "description": "Create method to retrieve list of enabled scrapers from the database with proper filtering and error handling",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Implement method that queries scrapers table, filters by enabled=true status, returns list of scraper names, handles database query errors, and implements caching mechanism to reduce database calls",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add get_today_results method for monitoring purposes",
+            "description": "Implement method to retrieve all results for the current date to support monitoring and verification",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Create method that queries results table filtered by today's date, returns list of all results with university/program/count data, handles timezone considerations, and provides proper error handling for query failures",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement batch_save_results for performance optimization",
+            "description": "Create optimized method for saving multiple results in a single database transaction to improve performance",
+            "dependencies": [
+              "3.1",
+              "3.2"
+            ],
+            "details": "Implement method that accepts list of result dictionaries, validates all results before insertion, uses Supabase batch insert functionality, implements transaction rollback on partial failures, and provides detailed error reporting for failed items",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add comprehensive unit tests with mocked Supabase client",
+            "description": "Create complete test suite for all Storage class methods using mocked Supabase client to ensure reliability",
+            "dependencies": [
+              "3.1",
+              "3.2",
+              "3.3",
+              "3.4",
+              "3.5"
+            ],
+            "details": "Write unit tests that mock Supabase client responses, test all success paths for each method, verify error handling with various failure scenarios, test data validation logic, verify retry mechanisms work correctly, and ensure 100% code coverage",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement HSE Excel Scraper",
+        "description": "Create scraper for HSE programs that downloads and parses Excel file to extract application counts for specified programs",
+        "details": "Implement scrapers/hse.py:\n```python\nimport pandas as pd\nimport logging\nfrom typing import Dict, List\n\nlogger = logging.getLogger(__name__)\n\nHSE_PROGRAMS = [\n    'ОНЛАЙН Аналитика больших данных',\n    'ОНЛАЙН Аналитика данных и прикладная статистика',\n    'ОНЛАЙН Искусственный интеллект',\n    'ОНЛАЙН ЛигалТех',\n    'ОНЛАЙН Магистр по наукам о данных',\n    'ОНЛАЙН Цифровая инженерия для компьютерных игр',\n    'ОНЛАЙН Цифровая урбанистика и аналитика города',\n    'ОНЛАЙН Инженерия данных',\n    'ОНЛАЙН Кибербезопасность',\n    'ОНЛАЙН Управление инновационным бизнесом',\n    'ОНЛАЙН Прикладная социальная психология',\n    'ОНЛАЙН Экономический анализ',\n    'ОНЛАЙН Маркетинг - менеджмент',\n    'ОНЛАЙН Управление в креативных индустриях',\n    'ОНЛАЙН Управление цифровым продуктом',\n    'ОНЛАЙН Магистр аналитики бизнеса'\n]\n\ndef scrape_hse_program(program_name: str) -> Dict:\n    url = 'https://priem45.hse.ru/ABITREPORTS/MAGREPORTS/FullTime/39121437.xls'\n    scraper_id = f'hse_{program_name.replace(\" \", \"_\").lower()}'\n    \n    try:\n        df = pd.read_excel(url, engine='xlrd')\n        \n        # Find the row with the program\n        program_row = df[df.iloc[:, 0].str.contains(program_name, na=False)]\n        \n        if program_row.empty:\n            raise ValueError(f\"Program {program_name} not found\")\n        \n        # Extract count from the correct column\n        count_column = 'Количество заявлений (места с оплатой стоимости обучения)'\n        count = int(program_row[count_column].iloc[0])\n        \n        return {\n            'scraper_id': scraper_id,\n            'name': f'ВШЭ - {program_name}',\n            'count': count,\n            'status': 'success'\n        }\n    except Exception as e:\n        logger.error(f\"Error scraping HSE {program_name}: {e}\")\n        return {\n            'scraper_id': scraper_id,\n            'name': f'ВШЭ - {program_name}',\n            'count': None,\n            'status': 'error',\n            'error': str(e)\n        }\n\ndef get_scrapers() -> List[callable]:\n    return [lambda p=prog: scrape_hse_program(p) for prog in HSE_PROGRAMS]\n```",
+        "testStrategy": "Test with actual Excel URL, verify correct programs are found, validate count extraction, test error handling with network issues",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Excel file download with retry logic",
+            "description": "Create a robust download function that fetches the HSE Excel file with retry logic, timeout handling, and proper error reporting for network failures",
+            "dependencies": [],
+            "details": "Implement download_excel() function using httpx with 3 retry attempts, 30-second timeout, exponential backoff, and proper logging. Handle connection errors, timeouts, and HTTP errors. Return bytes content or raise specific exceptions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Parse Excel structure and column mappings",
+            "description": "Analyze the downloaded Excel file to understand its structure, identify relevant sheets, and map column names to expected data fields",
+            "dependencies": [
+              "4.1"
+            ],
+            "details": "Use pandas with xlrd engine to read Excel file, identify the correct sheet containing program data, map Russian column names to expected fields (program name, application count), handle multiple sheet scenarios and varying column orders.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement fuzzy program name matching",
+            "description": "Create a program search function that uses fuzzy string matching to find HSE programs in the Excel data despite potential name variations",
+            "dependencies": [
+              "4.2"
+            ],
+            "details": "Implement find_program() using difflib.SequenceMatcher or similar for fuzzy matching with configurable threshold (e.g., 0.8 similarity). Handle case sensitivity, extra spaces, and minor spelling differences. Log matches with similarity scores.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Extract and validate count data",
+            "description": "Extract application counts from matched rows with proper type conversion, validation, and handling of various data formats",
+            "dependencies": [
+              "4.3"
+            ],
+            "details": "Implement extract_count() to handle various number formats (strings, floats, integers), remove non-numeric characters, validate positive integers, handle empty/null values, and provide default values for missing data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement comprehensive error handling",
+            "description": "Add error handling for all edge cases including network failures, corrupted files, missing data, and unexpected Excel formats",
+            "dependencies": [
+              "4.1",
+              "4.2",
+              "4.3",
+              "4.4"
+            ],
+            "details": "Wrap all operations in try-except blocks, create custom exceptions for specific failures (NetworkError, ParseError, DataNotFoundError), implement graceful degradation returning partial results when possible, and ensure detailed error logging.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Create unit tests with sample data",
+            "description": "Develop comprehensive unit tests using sample Excel files and mocked network responses to verify all functionality",
+            "dependencies": [
+              "4.5"
+            ],
+            "details": "Create test_hse.py with fixtures for sample Excel data, test successful parsing, fuzzy matching edge cases, error scenarios (network failures, corrupted files), and validate the complete scrape_hse() function returns expected format.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Implement MIPT HTML Scraper",
+        "description": "Create scraper for MIPT programs that parses HTML tables and extracts application counts based on data-index attribute",
+        "details": "Implement scrapers/mipt.py:\n```python\nimport httpx\nfrom bs4 import BeautifulSoup\nimport logging\nfrom typing import Dict, List\n\nlogger = logging.getLogger(__name__)\n\nMIPT_PROGRAMS = [\n    ('Науки о данных', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL05hdWtpIG8gZGFubnlraF9Lb250cmFrdC5odG1s'),\n    ('Современная комбинаторика', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL1NvdnJlbWVubmF5YSBrb21iaW5hdG9yaWthX0tvbnRyYWt0Lmh0bWw='),\n    ('Комбинаторика и цифровая экономика', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL0tvbWJpbmF0b3Jpa2EgaSB0c2lmcm92YXlhIGVrb25vbWlrYV9Lb250cmFrdC5odG1s'),\n    ('Contemporary combinatorics', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL0NvbnRlbXBvcmFyeSBTb21iaW5hdG9yaWNzX0tvbnRyYWt0Lmh0bWw='),\n    ('Modern Artificial Intelligence', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL01vZGVybiBzdGF0ZSBvZiBBcnRpZmljaWFsIEludGVsbGlnZW5jZV9Lb250cmFrdC5odG1s'),\n    ('Разработка IT-продукта', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL1JhenJhYm90a2EgSVQtcHJvZHVrdGFfS29udHJha3QuaHRtbA=='),\n    ('Управление IT-продуктами', 'https://priem.mipt.ru/applications_v2/bWFzdGVyL1VwcmF2bGVuaWUgSVQtcHJvZHVrdGFtaV9Lb250cmFrdC5odG1s')\n]\n\ndef scrape_mipt_program(name: str, url: str) -> Dict:\n    scraper_id = f'mipt_{name.replace(\" \", \"_\").lower()}'\n    \n    try:\n        response = httpx.get(url, timeout=30, follow_redirects=True)\n        response.raise_for_status()\n        \n        soup = BeautifulSoup(response.text, 'html.parser')\n        \n        # Find all elements with class R19\n        r19_elements = soup.find_all('tr', class_='R19')\n        \n        if not r19_elements:\n            raise ValueError(\"No elements with class R19 found\")\n        \n        # Get the last element\n        last_element = r19_elements[-1]\n        \n        # Extract data-index and add 1\n        data_index = int(last_element.get('data-index', 0))\n        count = data_index + 1\n        \n        return {\n            'scraper_id': scraper_id,\n            'name': f'МФТИ - {name}',\n            'count': count,\n            'status': 'success'\n        }\n    except Exception as e:\n        logger.error(f\"Error scraping MIPT {name}: {e}\")\n        return {\n            'scraper_id': scraper_id,\n            'name': f'МФТИ - {name}',\n            'count': None,\n            'status': 'error',\n            'error': str(e)\n        }\n\ndef get_scrapers() -> List[callable]:\n    return [lambda n=name, u=url: scrape_mipt_program(n, u) for name, url in MIPT_PROGRAMS]\n```",
+        "testStrategy": "Test with actual MIPT URLs, verify R19 class elements are found, validate data-index extraction and +1 calculation",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement HTML fetching with proper headers and timeout configuration",
+            "description": "Create HTTP client setup with appropriate headers (User-Agent, Accept) and timeout settings to reliably fetch MIPT application pages",
+            "dependencies": [],
+            "details": "Configure httpx client with 30-second timeout, add User-Agent header to avoid blocking, implement retry logic for failed requests (max 3 retries with exponential backoff), handle connection errors gracefully",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Parse HTML to locate R19 class elements reliably",
+            "description": "Use BeautifulSoup to parse fetched HTML and implement robust logic to find elements with class 'R19' in the document structure",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "Create BeautifulSoup parser with html.parser, implement find_all method for 'R19' class elements, add logging for debugging when elements are not found, handle cases where page structure might vary",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Extract data-index attribute with validation and edge case handling",
+            "description": "Extract the data-index attribute from R19 elements with proper validation to ensure it contains numeric values",
+            "dependencies": [
+              "5.2"
+            ],
+            "details": "Check if data-index attribute exists before accessing, validate that attribute value is numeric using try-except for int conversion, handle missing or malformed data-index attributes by logging warnings and returning None",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement the +1 calculation logic with bounds checking",
+            "description": "Add 1 to the extracted data-index value with proper bounds checking to ensure valid application count",
+            "dependencies": [
+              "5.3"
+            ],
+            "details": "Implement calculation as int(data_index) + 1, add bounds checking to ensure result is positive, handle integer overflow edge cases, return 0 or None for invalid calculations with appropriate logging",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add comprehensive error handling for malformed HTML and missing elements",
+            "description": "Implement try-except blocks and error recovery strategies for various failure scenarios in the scraping process",
+            "dependencies": [
+              "5.1",
+              "5.2",
+              "5.3",
+              "5.4"
+            ],
+            "details": "Wrap entire scraping logic in try-except, handle httpx.RequestError for network issues, handle BeautifulSoup parsing errors, return empty result with error status when R19 elements not found, log all errors with context for debugging",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement MEPhI HTML Scraper",
+        "description": "Create scraper for MEPhI programs that parses HTML tables and extracts application counts from pos class elements",
+        "details": "Implement scrapers/mephi.py:\n```python\nimport httpx\nfrom bs4 import BeautifulSoup\nimport logging\nfrom typing import Dict, List\n\nlogger = logging.getLogger(__name__)\n\nMEPHI_PROGRAMS = [\n    ('Машинное обучение', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12843/original/no'),\n    ('Науки о данных', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12842/original/no'),\n    ('Кибербезопасность', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12847/original/no'),\n    ('Безопасность информационных систем', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12846/original/no'),\n    ('Разработка программного обеспечения', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12844/original/no'),\n    ('Разработка веб приложений', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12845/original/no')\n]\n\ndef scrape_mephi_program(name: str, url: str) -> Dict:\n    scraper_id = f'mephi_{name.replace(\" \", \"_\").lower()}'\n    \n    try:\n        response = httpx.get(url, timeout=30, follow_redirects=True)\n        response.raise_for_status()\n        \n        soup = BeautifulSoup(response.text, 'html.parser')\n        \n        # Find all elements with class trPosBen\n        pos_elements = soup.find_all('tr', class_='trPosBen')\n        \n        if not pos_elements:\n            raise ValueError(\"No elements with class trPosBen found\")\n        \n        # Get the last element\n        last_element = pos_elements[-1]\n        \n        # Find td with class pos\n        pos_td = last_element.find('td', class_='pos')\n        \n        if not pos_td:\n            raise ValueError(\"No td with class pos found\")\n        \n        count = int(pos_td.text.strip())\n        \n        return {\n            'scraper_id': scraper_id,\n            'name': f'МИФИ - {name}',\n            'count': count,\n            'status': 'success'\n        }\n    except Exception as e:\n        logger.error(f\"Error scraping MEPhI {name}: {e}\")\n        return {\n            'scraper_id': scraper_id,\n            'name': f'МИФИ - {name}',\n            'count': None,\n            'status': 'error',\n            'error': str(e)\n        }\n\ndef get_scrapers() -> List[callable]:\n    return [lambda n=name, u=url: scrape_mephi_program(n, u) for name, url in MEPHI_PROGRAMS]\n```",
+        "testStrategy": "Test with actual MEPhI URLs, verify trPosBen class elements are found, validate pos class extraction",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement HTML fetching with authentication handling",
+            "description": "Create HTTP client setup for MEPhI URLs with proper headers, timeout configuration, and authentication handling if required by the server",
+            "dependencies": [],
+            "details": "Set up httpx client with appropriate headers (User-Agent, Accept), configure timeouts (30s), implement retry logic for failed requests, and handle potential authentication requirements or redirects",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Parse HTML and locate trPosBen elements",
+            "description": "Use BeautifulSoup to parse fetched HTML and find all elements with class 'trPosBen' which contain the application position data",
+            "dependencies": [
+              "6.1"
+            ],
+            "details": "Initialize BeautifulSoup with html.parser, use find_all() to locate elements with class='trPosBen', implement logging for debugging element counts and structure",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Navigate to nested pos class elements",
+            "description": "Within each trPosBen element, navigate the table structure to find nested elements with class 'pos' that contain the actual position numbers",
+            "dependencies": [
+              "6.2"
+            ],
+            "details": "For each trPosBen element, search for child elements with class='pos', handle potential variations in nesting depth, log the DOM path for debugging",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Extract and validate position numbers",
+            "description": "Extract text content from pos elements, convert to integers, and validate the extracted numbers are within reasonable ranges",
+            "dependencies": [
+              "6.3"
+            ],
+            "details": "Use .text.strip() to get content, implement safe integer conversion with try-except, validate numbers are positive and within expected range (1-1000), handle non-numeric content gracefully",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Handle edge cases and structure changes",
+            "description": "Implement robust error handling for empty tables, missing elements, changed HTML structure, and network failures",
+            "dependencies": [
+              "6.4"
+            ],
+            "details": "Return 0 for empty results, log warnings for missing elements, implement fallback parsing strategies for structure changes, ensure function always returns valid result dict even on failure",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Implement Scraper Registry and Runner",
+        "description": "Create registry module to manage all scrapers and runner module to execute scrapers with error isolation",
+        "details": "Implement core/registry.py:\n```python\nimport importlib\nimport logging\nfrom typing import Dict, List, Callable\n\nlogger = logging.getLogger(__name__)\n\nclass ScraperRegistry:\n    def __init__(self):\n        self.scrapers: Dict[str, Callable] = {}\n        self._load_scrapers()\n    \n    def _load_scrapers(self):\n        modules = ['hse', 'mipt', 'mephi']\n        \n        for module_name in modules:\n            try:\n                module = importlib.import_module(f'scrapers.{module_name}')\n                scrapers = module.get_scrapers()\n                \n                for i, scraper in enumerate(scrapers):\n                    # Generate unique key for each scraper\n                    key = f'{module_name}_{i}'\n                    self.scrapers[key] = scraper\n                    \n                logger.info(f\"Loaded {len(scrapers)} scrapers from {module_name}\")\n            except Exception as e:\n                logger.error(f\"Failed to load scrapers from {module_name}: {e}\")\n    \n    def get_all_scrapers(self) -> List[Callable]:\n        return list(self.scrapers.values())\n```\n\nImplement core/runner.py:\n```python\nimport logging\nimport concurrent.futures\nfrom typing import List, Dict, Callable\nfrom core.storage import Storage\n\nlogger = logging.getLogger(__name__)\n\nclass ScraperRunner:\n    def __init__(self, storage: Storage, max_workers: int = 5):\n        self.storage = storage\n        self.max_workers = max_workers\n    \n    def run_scraper(self, scraper: Callable) -> Dict:\n        try:\n            result = scraper()\n            self.storage.save_result(result)\n            return result\n        except Exception as e:\n            logger.error(f\"Scraper failed: {e}\")\n            return {\n                'status': 'error',\n                'error': str(e)\n            }\n    \n    def run_all(self, scrapers: List[Callable]) -> List[Dict]:\n        results = []\n        \n        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:\n            future_to_scraper = {executor.submit(self.run_scraper, scraper): scraper for scraper in scrapers}\n            \n            for future in concurrent.futures.as_completed(future_to_scraper):\n                try:\n                    result = future.result()\n                    results.append(result)\n                except Exception as e:\n                    logger.error(f\"Future failed: {e}\")\n        \n        return results\n```",
+        "testStrategy": "Test registry loads all scrapers correctly, verify runner executes scrapers in parallel with proper error isolation",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement ScraperRegistry with dynamic module loading logic",
+            "description": "Create the ScraperRegistry class with dynamic importlib-based loading of scraper modules from the scrapers directory. Implement the _load_scrapers method to automatically discover and import hse, mipt, and mephi modules.",
+            "dependencies": [],
+            "details": "Implement core/registry.py with ScraperRegistry class that uses importlib to dynamically load scraper modules. Handle import errors gracefully and log which scrapers were successfully loaded. Store loaded scrapers in a dictionary with module names as keys.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Add scraper validation and health checking methods",
+            "description": "Implement methods to validate that loaded scrapers have required functions (scrape) and add health check functionality to verify scrapers are operational before execution.",
+            "dependencies": [
+              "7.1"
+            ],
+            "details": "Add validate_scraper method to check if module has callable 'scrape' function. Implement health_check method that performs basic connectivity tests for each scraper's target URLs. Add get_available_scrapers method to list all successfully loaded and validated scrapers.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement ScraperRunner with thread pool configuration",
+            "description": "Create ScraperRunner class with configurable ThreadPoolExecutor for concurrent scraper execution. Implement initialization with max_workers parameter and proper thread pool lifecycle management.",
+            "dependencies": [
+              "7.1",
+              "7.2"
+            ],
+            "details": "Implement core/runner.py with ScraperRunner class using concurrent.futures.ThreadPoolExecutor. Add configuration for max_workers (default 3), implement context manager support for automatic cleanup, and add run_all method to execute all registered scrapers concurrently.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add timeout handling and graceful shutdown for long-running scrapers",
+            "description": "Implement timeout mechanism for individual scraper execution and graceful shutdown handling to prevent hanging threads and ensure clean termination.",
+            "dependencies": [
+              "7.3"
+            ],
+            "details": "Add timeout parameter to scraper execution (default 30 seconds per scraper). Implement graceful shutdown with signal handlers for SIGINT/SIGTERM. Use Future.result(timeout) to enforce timeouts and handle TimeoutError exceptions. Add cleanup method to cancel pending futures on shutdown.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement result aggregation and error reporting",
+            "description": "Create result aggregation logic to collect outputs from all scrapers and comprehensive error reporting for failed scrapers with detailed error context.",
+            "dependencies": [
+              "7.3",
+              "7.4"
+            ],
+            "details": "Implement aggregate_results method to collect successful scraper outputs into a unified format. Add error tracking with scraper name, error type, traceback, and timestamp. Create get_execution_summary method returning success/failure counts and detailed error reports.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add metrics collection for scraper performance",
+            "description": "Implement performance metrics collection including execution time, success rate, and resource usage for each scraper to enable monitoring and optimization.",
+            "dependencies": [
+              "7.5"
+            ],
+            "details": "Add timing decorators to track individual scraper execution duration. Implement metrics dictionary tracking start time, end time, duration, status, and error details per scraper. Create get_performance_metrics method returning aggregated statistics including average execution time and success rates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create integration tests for concurrent execution",
+            "description": "Develop comprehensive integration tests to verify concurrent scraper execution, error isolation, timeout handling, and proper resource cleanup.",
+            "dependencies": [
+              "7.1",
+              "7.2",
+              "7.3",
+              "7.4",
+              "7.5",
+              "7.6"
+            ],
+            "details": "Write tests in tests/test_integration.py covering: concurrent execution of multiple scrapers, error isolation (one failing scraper doesn't affect others), timeout enforcement, metrics collection accuracy, graceful shutdown behavior, and thread pool resource cleanup. Use mock scrapers with controlled delays and failures.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Create Main Entry Point and Logging Configuration",
+        "description": "Implement main.py as the primary cron job entry point with comprehensive logging and error handling",
+        "details": "Implement main.py:\n```python\nimport os\nimport logging\nimport sys\nfrom datetime import datetime\nfrom dotenv import load_dotenv\n\nfrom core.storage import Storage\nfrom core.registry import ScraperRegistry\nfrom core.runner import ScraperRunner\n\n# Load environment variables\nload_dotenv()\n\n# Configure logging\nlogging.basicConfig(\n    level=logging.INFO,\n    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',\n    handlers=[\n        logging.StreamHandler(sys.stdout),\n        logging.FileHandler(f'logs/scraper_{datetime.now().strftime(\"%Y%m%d\")}.log')\n    ]\n)\n\nlogger = logging.getLogger(__name__)\n\ndef main():\n    logger.info(\"Starting daily scraping job\")\n    \n    try:\n        # Initialize components\n        storage = Storage()\n        registry = ScraperRegistry()\n        runner = ScraperRunner(storage)\n        \n        # Get all scrapers\n        scrapers = registry.get_all_scrapers()\n        logger.info(f\"Found {len(scrapers)} scrapers\")\n        \n        # Run all scrapers\n        results = runner.run_all(scrapers)\n        \n        # Log summary\n        success_count = sum(1 for r in results if r.get('status') == 'success')\n        error_count = sum(1 for r in results if r.get('status') == 'error')\n        \n        logger.info(f\"Scraping completed: {success_count} success, {error_count} errors\")\n        \n        # Exit with appropriate code\n        if error_count > len(scrapers) * 0.5:  # More than 50% failed\n            logger.error(\"Too many scrapers failed\")\n            sys.exit(1)\n        \n    except Exception as e:\n        logger.error(f\"Fatal error in main: {e}\")\n        sys.exit(1)\n\nif __name__ == \"__main__\":\n    main()\n```\n\nCreate logs directory and update .gitignore:\n```\nlogs/\n*.log\n.env\n__pycache__/\n*.pyc\n.DS_Store\n```",
+        "testStrategy": "Run main.py locally, verify all scrapers execute, check log files are created with proper formatting, test error scenarios",
+        "priority": "medium",
+        "dependencies": [
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up comprehensive logging configuration with rotation",
+            "description": "Implement a robust logging system with file rotation, multiple log levels, and separate error logs for production monitoring",
+            "dependencies": [],
+            "details": "Create logging configuration that includes: rotating file handlers with size/time-based rotation, separate error log file, structured logging format with timestamps and module names, configurable log levels via environment variables, and proper log directory creation. Implement using Python's logging.handlers.RotatingFileHandler or TimedRotatingFileHandler.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement main orchestration logic with proper initialization order",
+            "description": "Create the main execution flow that properly initializes all components in the correct order and orchestrates scraper execution",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "Implement main() function that: loads environment variables, initializes logging, creates Storage instance, initializes ScraperRegistry, creates ScraperRunner, executes all scrapers with proper error handling, aggregates results, and logs execution summary. Ensure proper initialization order to avoid dependency issues.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add error aggregation and reporting logic",
+            "description": "Implement comprehensive error collection and reporting system to track failures across all scrapers",
+            "dependencies": [
+              "8.2"
+            ],
+            "details": "Create error aggregation logic that: collects all errors from individual scrapers, categorizes errors by type (network, parsing, database), generates summary report with failure counts, logs detailed error information with stack traces, and optionally sends error notifications. Include retry statistics and partial success handling.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement exit code handling for cron job monitoring",
+            "description": "Add proper exit code management to enable external monitoring systems to track job success/failure",
+            "dependencies": [
+              "8.3"
+            ],
+            "details": "Implement exit code logic: return 0 for complete success, return 1 for partial failures (some scrapers failed), return 2 for complete failure, return 3 for configuration/initialization errors. Include signal handling for graceful shutdown. Log exit codes and reasons for monitoring integration.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create local testing script with mock data",
+            "description": "Develop a testing script that allows local execution with mock data without hitting real endpoints",
+            "dependencies": [
+              "8.4"
+            ],
+            "details": "Create test_main.py script that: provides mock responses for all scrapers, simulates various error conditions, tests all exit code scenarios, validates logging output, and includes dry-run mode. Add command-line arguments for selecting specific scrapers to test and controlling mock behavior.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Deploy to Railway with Cron Configuration",
+        "description": "Configure Railway deployment with daily cron job execution and proper environment variables",
+        "details": "Create railway.json:\n```json\n{\n  \"$schema\": \"https://railway.app/railway.schema.json\",\n  \"build\": {\n    \"builder\": \"NIXPACKS\"\n  },\n  \"deploy\": {\n    \"startCommand\": \"python main.py\",\n    \"restartPolicyType\": \"ON_FAILURE\",\n    \"restartPolicyMaxRetries\": 3\n  }\n}\n```\n\nCreate nixpacks.toml:\n```toml\n[phases.setup]\napt = [\"python3-dev\", \"libxml2-dev\", \"libxslt-dev\"]\n\n[phases.install]\ncmds = [\"pip install -r requirements.txt\"]\n\n[start]\ncmd = \"python main.py\"\n```\n\nUpdate requirements.txt:\n```\nhttpx==0.25.2\nbeautifulsoup4==4.12.2\npandas==2.1.4\nsupabase==2.3.0\npython-dotenv==1.0.0\nopenpyxl==3.1.2\nlxml==4.9.4\nxlrd==2.0.1\n```\n\nRailway cron configuration:\n- Set up cron schedule: \"0 10 * * *\" (daily at 10 AM)\n- Configure environment variables in Railway dashboard\n- Enable automatic deploys from GitHub",
+        "testStrategy": "Deploy to Railway, verify cron job triggers at scheduled time, check logs in Railway dashboard, monitor first few runs",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create and test railway.json configuration locally",
+            "description": "Set up Railway configuration file with proper build and deployment settings, test JSON validity and configuration options",
+            "dependencies": [],
+            "details": "Create railway.json with schema reference, configure Nixpacks builder, set start command to 'python main.py', configure restart policy with ON_FAILURE and max 3 retries. Validate JSON syntax and test configuration locally before deployment.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure nixpacks.toml for Python dependencies and system packages",
+            "description": "Create Nixpacks configuration to install required system packages and Python dependencies for the scraping application",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Set up nixpacks.toml with setup phase to install python3-dev, libxml2-dev, and libxslt-dev via apt. Configure install phase to run pip install -r requirements.txt. Set start command to python main.py. Ensure all dependencies from requirements.txt are properly specified.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Set up Railway project and connect GitHub repository",
+            "description": "Create new Railway project, connect to GitHub repository, and configure automatic deployments from main branch",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "Create new project in Railway dashboard, connect GitHub account and select repository, configure automatic deployments on push to main branch. Set up project name and ensure Railway has proper permissions to access the repository.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Configure environment variables in Railway dashboard",
+            "description": "Set up all required environment variables for Supabase connection and application configuration in Railway",
+            "dependencies": [
+              "9.3"
+            ],
+            "details": "Add SUPABASE_URL and SUPABASE_KEY environment variables in Railway dashboard. Configure any additional environment variables needed for scrapers. Ensure variables are properly encrypted and accessible during runtime.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Set up cron schedule and test execution",
+            "description": "Configure Railway cron job to run daily at specified time and verify proper execution",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "Set up Railway cron configuration for daily execution. Configure timezone settings if needed. Deploy and monitor first scheduled run to ensure cron triggers correctly. Check Railway logs to verify successful execution at scheduled time.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement deployment monitoring and rollback procedures",
+            "description": "Set up monitoring for deployment health and create procedures for rolling back failed deployments",
+            "dependencies": [
+              "9.5"
+            ],
+            "details": "Configure Railway deployment notifications, set up log monitoring in Railway dashboard, document rollback procedures using Railway's deployment history. Create runbook for common deployment issues and recovery steps. Test rollback functionality with a test deployment.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Add Monitoring Dashboard and Health Checks",
+        "description": "Create simple web dashboard to view scraping status and implement health check endpoint for monitoring",
+        "details": "Create dashboard.py:\n```python\nfrom flask import Flask, render_template, jsonify\nfrom datetime import datetime, timedelta\nfrom core.storage import Storage\nimport os\n\napp = Flask(__name__)\n\n@app.route('/')\ndef dashboard():\n    storage = Storage()\n    \n    # Get today's results\n    today = datetime.now().date()\n    results = storage.client.table('applicant_counts')\\\n        .select('*')\\\n        .eq('date', today.isoformat())\\\n        .execute()\n    \n    # Calculate statistics\n    total = len(results.data)\n    success = sum(1 for r in results.data if r['status'] == 'success')\n    errors = sum(1 for r in results.data if r['status'] == 'error')\n    \n    return render_template('dashboard.html', \n        date=today,\n        total=total,\n        success=success,\n        errors=errors,\n        results=results.data\n    )\n\n@app.route('/health')\ndef health():\n    try:\n        storage = Storage()\n        # Check if we have recent data\n        yesterday = (datetime.now() - timedelta(days=1)).date()\n        results = storage.client.table('applicant_counts')\\\n            .select('count(*)')\\\n            .gte('date', yesterday.isoformat())\\\n            .execute()\n        \n        if results.data:\n            return jsonify({'status': 'healthy', 'last_run': yesterday.isoformat()})\n        else:\n            return jsonify({'status': 'unhealthy', 'error': 'No recent data'}), 503\n    except Exception as e:\n        return jsonify({'status': 'unhealthy', 'error': str(e)}), 503\n\nif __name__ == '__main__':\n    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))\n```\n\nCreate templates/dashboard.html:\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Scraper Dashboard</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 20px; }\n        .stats { display: flex; gap: 20px; margin-bottom: 20px; }\n        .stat { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }\n        .success { color: green; }\n        .error { color: red; }\n        table { border-collapse: collapse; width: 100%; }\n        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n        th { background-color: #f2f2f2; }\n    </style>\n</head>\n<body>\n    <h1>Applicant Scraper Dashboard</h1>\n    <h2>Date: {{ date }}</h2>\n    \n    <div class=\"stats\">\n        <div class=\"stat\">Total: {{ total }}</div>\n        <div class=\"stat success\">Success: {{ success }}</div>\n        <div class=\"stat error\">Errors: {{ errors }}</div>\n    </div>\n    \n    <table>\n        <tr>\n            <th>University</th>\n            <th>Program</th>\n            <th>Count</th>\n            <th>Status</th>\n            <th>Error</th>\n        </tr>\n        {% for result in results %}\n        <tr>\n            <td>{{ result.name.split(' - ')[0] }}</td>\n            <td>{{ result.name.split(' - ')[1] }}</td>\n            <td>{{ result.count or '-' }}</td>\n            <td class=\"{{ 'success' if result.status == 'success' else 'error' }}\">{{ result.status }}</td>\n            <td>{{ result.error or '-' }}</td>\n        </tr>\n        {% endfor %}\n    </table>\n</body>\n</html>\n```",
+        "testStrategy": "Deploy dashboard alongside main app, access /health endpoint to verify monitoring, check dashboard displays current data correctly",
+        "priority": "low",
+        "dependencies": [
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Flask application with proper structure",
+            "description": "Create the Flask application structure with necessary directories and initialize the Flask app with proper configuration for the monitoring dashboard",
+            "dependencies": [],
+            "details": "Create dashboard.py file with Flask app initialization, set up templates/ and static/ directories for HTML templates and CSS files. Configure Flask app with proper settings including debug mode, secret key from environment variables, and template auto-reloading for development",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement dashboard route with data aggregation logic",
+            "description": "Create the main dashboard route that fetches and aggregates scraping data from Supabase storage for display",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Implement the '/' route that connects to Storage, queries applicant_counts table for today's data, calculates statistics like total programs scraped, success/failure rates, and aggregates data by university. Handle cases where no data exists for the current day",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create responsive HTML template with CSS styling",
+            "description": "Design and implement the dashboard HTML template with responsive CSS styling to display scraping statistics and results",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Create templates/dashboard.html with Bootstrap or custom CSS for responsive design. Include sections for overall statistics, per-university breakdown, recent scraping results table, and timestamp of last update. Add visual indicators for success/failure status using colors and icons",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement health check endpoint with proper status codes",
+            "description": "Create a /health endpoint that returns appropriate HTTP status codes based on system health and recent scraping activity",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "Implement /health route that checks database connectivity, verifies recent scraping activity (e.g., data exists from last 24 hours), and returns JSON response with status details. Return 200 OK if healthy, 503 Service Unavailable if database is down, or 500 if no recent data exists",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add authentication or IP restrictions for security",
+            "description": "Implement security measures to restrict access to the dashboard using either basic authentication or IP whitelisting",
+            "dependencies": [
+              "10.1",
+              "10.2",
+              "10.4"
+            ],
+            "details": "Add Flask-HTTPAuth for basic authentication with username/password from environment variables, or implement IP whitelist middleware that checks request IP against allowed list. Apply security to all routes except /health endpoint for external monitoring",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Configure dashboard deployment alongside main application",
+            "description": "Set up deployment configuration to run the Flask dashboard alongside the main scraping application",
+            "dependencies": [
+              "10.1",
+              "10.2",
+              "10.3",
+              "10.4",
+              "10.5"
+            ],
+            "details": "Create deployment script or configuration for running Flask app with gunicorn or similar WSGI server. Configure port binding (e.g., 5000), process management, and ensure dashboard starts automatically. Update documentation with dashboard URL and access instructions",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-22T15:17:40.038Z",
+      "updated": "2025-07-22T15:31:01.495Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
