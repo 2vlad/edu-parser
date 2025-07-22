@@ -1,0 +1,21 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "./start-dashboard.sh",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "SCRAPER_MODE": "enabled",
+        "SUCCESS_THRESHOLD": "0.5",
+        "FLASK_DEBUG": "false",
+        "DASHBOARD_WORKERS": "2"
+      }
+    }
+  }
+}

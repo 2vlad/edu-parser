@@ -1,0 +1,56 @@
+name: Run Scrapers
+
+on:
+  schedule:
+    - cron: '0 6,18 * * *'  # Run at 6 AM and 6 PM UTC daily
+  workflow_dispatch:  # Allow manual runs
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev libxslt-dev zlib1g-dev
+          
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Verify installation
+        run: |
+          python -c "import pandas, httpx, beautifulsoup4, supabase; print('All dependencies imported successfully')"
+          
+      - name: Run scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SCRAPER_MODE: enabled
+          SUCCESS_THRESHOLD: '0.5'
+          LOG_LEVEL: INFO
+        run: |
+          echo "Starting scraper run at $(date)"
+          python main.py
+          echo "Scraper run completed at $(date)"
+          
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs-${{ github.run_number }}
+          path: |
+            logs/
+            *.log
+          retention-days: 7

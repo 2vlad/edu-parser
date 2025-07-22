@@ -1,0 +1,82 @@
+name: Monitor Deployment
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run deployment status check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        id: status_check
+        run: |
+          python scripts/deployment_status.py > status_report.json
+          cat status_report.json
+          
+      - name: Parse status report
+        id: parse_status
+        run: |
+          STATUS=$(python -c "import json; data=json.load(open('status_report.json')); print(data['overall_status'])")
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          
+      - name: Create status summary
+        run: |
+          python -c "
+          import json
+          
+          with open('status_report.json') as f:
+              data = json.load(f)
+          
+          status = data['overall_status']
+          emoji = '🟢' if status == 'healthy' else '🟡' if status == 'warning' else '🔴'
+          
+          print(f'## {emoji} Deployment Status: {status.upper()}')
+          print()
+          
+          for check_name, check_data in data['checks'].items():
+              check_status = check_data['status']
+              check_emoji = '✅' if check_status == 'healthy' else '⚠️' if check_status == 'warning' else '❌'
+              print(f'### {check_emoji} {check_name.replace(\"_\", \" \").title()}')
+              
+              details = check_data.get('details', {})
+              for key, value in details.items():
+                  if key != 'error':
+                      print(f'- **{key.replace(\"_\", \" \").title()}**: {value}')
+              
+              if 'error' in details:
+                  print(f'- **Error**: `{details[\"error\"]}`')
+              print()
+          " >> $GITHUB_STEP_SUMMARY
+          
+      - name: Notify on failure
+        if: steps.parse_status.outputs.status == 'unhealthy'
+        run: |
+          echo "🚨 DEPLOYMENT UNHEALTHY - Check status report above" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Upload status report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: status-report-${{ github.run_number }}
+          path: status_report.json
+          retention-days: 30

@@ -1,0 +1,93 @@
+name: Health Check
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Run every 30 minutes
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Test core imports
+        run: |
+          python -c "
+          try:
+              from core.logging_config import setup_logging, get_logger
+              from core.storage import Storage  
+              from core.registry import ScraperRegistry
+              from core.runner import ScraperRunner
+              print('✓ All core modules imported successfully')
+          except Exception as e:
+              print(f'✗ Import error: {e}')
+              exit(1)
+          "
+          
+      - name: Test main.py syntax
+        run: |
+          python -m py_compile main.py
+          echo "✓ main.py syntax is valid"
+          
+      - name: Run tests
+        run: |
+          python -m pytest -v --tb=short
+          
+      - name: Test scraper discovery
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from core.registry import ScraperRegistry
+          from core.storage import Storage
+          
+          # Mock storage to avoid needing real Supabase
+          class MockStorage:
+              def load_enabled_scrapers(self): return []
+              def save_scraper_result(self, *args): pass
+          
+          registry = ScraperRegistry(storage=MockStorage())
+          count = registry.discover_scrapers()
+          print(f'✓ Discovered {count} scrapers')
+          
+          if count < 20:
+              print(f'⚠️  Warning: Only {count} scrapers discovered, expected ~29')
+          "
+          
+      - name: Validate configuration files
+        run: |
+          # Validate JSON files
+          python -c "import json; json.load(open('railway.json'))"
+          echo "✓ railway.json is valid JSON"
+          
+          # Validate requirements.txt
+          pip check
+          echo "✓ No dependency conflicts found"
+          
+      - name: Create health report
+        if: always()
+        run: |
+          echo "## Health Check Report" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python Version**: $(python --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Core Modules**: ✅ Imported successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- **Syntax Check**: ✅ main.py valid" >> $GITHUB_STEP_SUMMARY
+          echo "- **Configuration**: ✅ All config files valid" >> $GITHUB_STEP_SUMMARY

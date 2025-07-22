@@ -1,0 +1,20 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "startCommand": "python main.py",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3,
+    "cronSchedule": "0 6,18 * * *"
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "SCRAPER_MODE": "enabled",
+        "SUCCESS_THRESHOLD": "0.5"
+      }
+    }
+  }
+}

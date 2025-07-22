@@ -217,7 +217,7 @@
         "dependencies": [
           3
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -225,7 +225,7 @@
             "description": "Create a robust download function that fetches the HSE Excel file with retry logic, timeout handling, and proper error reporting for network failures",
             "dependencies": [],
             "details": "Implement download_excel() function using httpx with 3 retry attempts, 30-second timeout, exponential backoff, and proper logging. Handle connection errors, timeouts, and HTTP errors. Return bytes content or raise specific exceptions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -236,7 +236,7 @@
               "4.1"
             ],
             "details": "Use pandas with xlrd engine to read Excel file, identify the correct sheet containing program data, map Russian column names to expected fields (program name, application count), handle multiple sheet scenarios and varying column orders.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -247,7 +247,7 @@
               "4.2"
             ],
             "details": "Implement find_program() using difflib.SequenceMatcher or similar for fuzzy matching with configurable threshold (e.g., 0.8 similarity). Handle case sensitivity, extra spaces, and minor spelling differences. Log matches with similarity scores.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -258,7 +258,7 @@
               "4.3"
             ],
             "details": "Implement extract_count() to handle various number formats (strings, floats, integers), remove non-numeric characters, validate positive integers, handle empty/null values, and provide default values for missing data.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -272,7 +272,7 @@
               "4.4"
             ],
             "details": "Wrap all operations in try-except blocks, create custom exceptions for specific failures (NetworkError, ParseError, DataNotFoundError), implement graceful degradation returning partial results when possible, and ensure detailed error logging.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -283,7 +283,7 @@
               "4.5"
             ],
             "details": "Create test_hse.py with fixtures for sample Excel data, test successful parsing, fuzzy matching edge cases, error scenarios (network failures, corrupted files), and validate the complete scrape_hse() function returns expected format.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -298,7 +298,7 @@
         "dependencies": [
           3
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -306,7 +306,7 @@
             "description": "Create HTTP client setup with appropriate headers (User-Agent, Accept) and timeout settings to reliably fetch MIPT application pages",
             "dependencies": [],
             "details": "Configure httpx client with 30-second timeout, add User-Agent header to avoid blocking, implement retry logic for failed requests (max 3 retries with exponential backoff), handle connection errors gracefully",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -317,7 +317,7 @@
               "5.1"
             ],
             "details": "Create BeautifulSoup parser with html.parser, implement find_all method for 'R19' class elements, add logging for debugging when elements are not found, handle cases where page structure might vary",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -328,7 +328,7 @@
               "5.2"
             ],
             "details": "Check if data-index attribute exists before accessing, validate that attribute value is numeric using try-except for int conversion, handle missing or malformed data-index attributes by logging warnings and returning None",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -339,7 +339,7 @@
               "5.3"
             ],
             "details": "Implement calculation as int(data_index) + 1, add bounds checking to ensure result is positive, handle integer overflow edge cases, return 0 or None for invalid calculations with appropriate logging",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -353,7 +353,7 @@
               "5.4"
             ],
             "details": "Wrap entire scraping logic in try-except, handle httpx.RequestError for network issues, handle BeautifulSoup parsing errors, return empty result with error status when R19 elements not found, log all errors with context for debugging",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -368,7 +368,7 @@
         "dependencies": [
           3
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -376,7 +376,7 @@
             "description": "Create HTTP client setup for MEPhI URLs with proper headers, timeout configuration, and authentication handling if required by the server",
             "dependencies": [],
             "details": "Set up httpx client with appropriate headers (User-Agent, Accept), configure timeouts (30s), implement retry logic for failed requests, and handle potential authentication requirements or redirects",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -387,7 +387,7 @@
               "6.1"
             ],
             "details": "Initialize BeautifulSoup with html.parser, use find_all() to locate elements with class='trPosBen', implement logging for debugging element counts and structure",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -398,7 +398,7 @@
               "6.2"
             ],
             "details": "For each trPosBen element, search for child elements with class='pos', handle potential variations in nesting depth, log the DOM path for debugging",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -409,7 +409,7 @@
               "6.3"
             ],
             "details": "Use .text.strip() to get content, implement safe integer conversion with try-except, validate numbers are positive and within expected range (1-1000), handle non-numeric content gracefully",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -420,7 +420,7 @@
               "6.4"
             ],
             "details": "Return 0 for empty results, log warnings for missing elements, implement fallback parsing strategies for structure changes, ensure function always returns valid result dict even on failure",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -437,7 +437,7 @@
           5,
           6
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -445,7 +445,7 @@
             "description": "Create the ScraperRegistry class with dynamic importlib-based loading of scraper modules from the scrapers directory. Implement the _load_scrapers method to automatically discover and import hse, mipt, and mephi modules.",
             "dependencies": [],
             "details": "Implement core/registry.py with ScraperRegistry class that uses importlib to dynamically load scraper modules. Handle import errors gracefully and log which scrapers were successfully loaded. Store loaded scrapers in a dictionary with module names as keys.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -456,7 +456,7 @@
               "7.1"
             ],
             "details": "Add validate_scraper method to check if module has callable 'scrape' function. Implement health_check method that performs basic connectivity tests for each scraper's target URLs. Add get_available_scrapers method to list all successfully loaded and validated scrapers.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -468,7 +468,7 @@
               "7.2"
             ],
             "details": "Implement core/runner.py with ScraperRunner class using concurrent.futures.ThreadPoolExecutor. Add configuration for max_workers (default 3), implement context manager support for automatic cleanup, and add run_all method to execute all registered scrapers concurrently.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -479,7 +479,7 @@
               "7.3"
             ],
             "details": "Add timeout parameter to scraper execution (default 30 seconds per scraper). Implement graceful shutdown with signal handlers for SIGINT/SIGTERM. Use Future.result(timeout) to enforce timeouts and handle TimeoutError exceptions. Add cleanup method to cancel pending futures on shutdown.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -491,7 +491,7 @@
               "7.4"
             ],
             "details": "Implement aggregate_results method to collect successful scraper outputs into a unified format. Add error tracking with scraper name, error type, traceback, and timestamp. Create get_execution_summary method returning success/failure counts and detailed error reports.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -502,7 +502,7 @@
               "7.5"
             ],
             "details": "Add timing decorators to track individual scraper execution duration. Implement metrics dictionary tracking start time, end time, duration, status, and error details per scraper. Create get_performance_metrics method returning aggregated statistics including average execution time and success rates.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -518,7 +518,7 @@
               "7.6"
             ],
             "details": "Write tests in tests/test_integration.py covering: concurrent execution of multiple scrapers, error isolation (one failing scraper doesn't affect others), timeout enforcement, metrics collection accuracy, graceful shutdown behavior, and thread pool resource cleanup. Use mock scrapers with controlled delays and failures.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -533,7 +533,7 @@
         "dependencies": [
           7
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -541,7 +541,7 @@
             "description": "Implement a robust logging system with file rotation, multiple log levels, and separate error logs for production monitoring",
             "dependencies": [],
             "details": "Create logging configuration that includes: rotating file handlers with size/time-based rotation, separate error log file, structured logging format with timestamps and module names, configurable log levels via environment variables, and proper log directory creation. Implement using Python's logging.handlers.RotatingFileHandler or TimedRotatingFileHandler.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -552,7 +552,7 @@
               "8.1"
             ],
             "details": "Implement main() function that: loads environment variables, initializes logging, creates Storage instance, initializes ScraperRegistry, creates ScraperRunner, executes all scrapers with proper error handling, aggregates results, and logs execution summary. Ensure proper initialization order to avoid dependency issues.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -563,7 +563,7 @@
               "8.2"
             ],
             "details": "Create error aggregation logic that: collects all errors from individual scrapers, categorizes errors by type (network, parsing, database), generates summary report with failure counts, logs detailed error information with stack traces, and optionally sends error notifications. Include retry statistics and partial success handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -574,7 +574,7 @@
               "8.3"
             ],
             "details": "Implement exit code logic: return 0 for complete success, return 1 for partial failures (some scrapers failed), return 2 for complete failure, return 3 for configuration/initialization errors. Include signal handling for graceful shutdown. Log exit codes and reasons for monitoring integration.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -585,7 +585,7 @@
               "8.4"
             ],
             "details": "Create test_main.py script that: provides mock responses for all scrapers, simulates various error conditions, tests all exit code scenarios, validates logging output, and includes dry-run mode. Add command-line arguments for selecting specific scrapers to test and controlling mock behavior.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -600,7 +600,7 @@
         "dependencies": [
           8
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -608,7 +608,7 @@
             "description": "Set up Railway configuration file with proper build and deployment settings, test JSON validity and configuration options",
             "dependencies": [],
             "details": "Create railway.json with schema reference, configure Nixpacks builder, set start command to 'python main.py', configure restart policy with ON_FAILURE and max 3 retries. Validate JSON syntax and test configuration locally before deployment.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -619,7 +619,7 @@
               "9.1"
             ],
             "details": "Set up nixpacks.toml with setup phase to install python3-dev, libxml2-dev, and libxslt-dev via apt. Configure install phase to run pip install -r requirements.txt. Set start command to python main.py. Ensure all dependencies from requirements.txt are properly specified.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -630,7 +630,7 @@
               "9.2"
             ],
             "details": "Create new project in Railway dashboard, connect GitHub account and select repository, configure automatic deployments on push to main branch. Set up project name and ensure Railway has proper permissions to access the repository.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -641,7 +641,7 @@
               "9.3"
             ],
             "details": "Add SUPABASE_URL and SUPABASE_KEY environment variables in Railway dashboard. Configure any additional environment variables needed for scrapers. Ensure variables are properly encrypted and accessible during runtime.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -652,7 +652,7 @@
               "9.4"
             ],
             "details": "Set up Railway cron configuration for daily execution. Configure timezone settings if needed. Deploy and monitor first scheduled run to ensure cron triggers correctly. Check Railway logs to verify successful execution at scheduled time.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -663,7 +663,7 @@
               "9.5"
             ],
             "details": "Configure Railway deployment notifications, set up log monitoring in Railway dashboard, document rollback procedures using Railway's deployment history. Create runbook for common deployment issues and recovery steps. Test rollback functionality with a test deployment.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -678,7 +678,7 @@
         "dependencies": [
           9
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -686,7 +686,7 @@
             "description": "Create the Flask application structure with necessary directories and initialize the Flask app with proper configuration for the monitoring dashboard",
             "dependencies": [],
             "details": "Create dashboard.py file with Flask app initialization, set up templates/ and static/ directories for HTML templates and CSS files. Configure Flask app with proper settings including debug mode, secret key from environment variables, and template auto-reloading for development",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -697,7 +697,7 @@
               "10.1"
             ],
             "details": "Implement the '/' route that connects to Storage, queries applicant_counts table for today's data, calculates statistics like total programs scraped, success/failure rates, and aggregates data by university. Handle cases where no data exists for the current day",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -708,7 +708,7 @@
               "10.1"
             ],
             "details": "Create templates/dashboard.html with Bootstrap or custom CSS for responsive design. Include sections for overall statistics, per-university breakdown, recent scraping results table, and timestamp of last update. Add visual indicators for success/failure status using colors and icons",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -719,7 +719,7 @@
               "10.1"
             ],
             "details": "Implement /health route that checks database connectivity, verifies recent scraping activity (e.g., data exists from last 24 hours), and returns JSON response with status details. Return 200 OK if healthy, 503 Service Unavailable if database is down, or 500 if no recent data exists",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -732,7 +732,7 @@
               "10.4"
             ],
             "details": "Add Flask-HTTPAuth for basic authentication with username/password from environment variables, or implement IP whitelist middleware that checks request IP against allowed list. Apply security to all routes except /health endpoint for external monitoring",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -747,15 +747,85 @@
               "10.5"
             ],
             "details": "Create deployment script or configuration for running Flask app with gunicorn or similar WSGI server. Configure port binding (e.g., 5000), process management, and ensure dashboard starts automatically. Update documentation with dashboard URL and access instructions",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Add Google Sheets Integration for Scraping Results Export",
+        "description": "Implement Google Sheets API integration to automatically export scraping results to a shared spreadsheet with daily synchronization, proper formatting by university/program, and historical data tracking",
+        "details": "Create google_sheets.py module:\n```python\nimport os\nimport logging\nfrom datetime import datetime, timedelta\nfrom google.oauth2 import service_account\nfrom googleapiclient.discovery import build\nfrom googleapiclient.errors import HttpError\nfrom typing import List, Dict, Optional\nfrom core.storage import Storage\n\nlogger = logging.getLogger(__name__)\n\nclass GoogleSheetsExporter:\n    def __init__(self):\n        self.storage = Storage()\n        self.spreadsheet_id = os.environ.get('GOOGLE_SHEETS_ID')\n        self.service = self._authenticate()\n    \n    def _authenticate(self):\n        \"\"\"Authenticate using service account credentials\"\"\"\n        try:\n            # Load credentials from environment variable (base64 encoded JSON)\n            import base64\n            import json\n            \n            creds_base64 = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')\n            if not creds_base64:\n                raise ValueError('GOOGLE_SERVICE_ACCOUNT_KEY not found')\n            \n            creds_json = base64.b64decode(creds_base64).decode('utf-8')\n            creds_dict = json.loads(creds_json)\n            \n            credentials = service_account.Credentials.from_service_account_info(\n                creds_dict,\n                scopes=['https://www.googleapis.com/auth/spreadsheets']\n            )\n            \n            service = build('sheets', 'v4', credentials=credentials)\n            return service\n        except Exception as e:\n            logger.error(f'Failed to authenticate with Google Sheets: {e}')\n            raise\n    \n    def export_daily_results(self, date: Optional[datetime] = None) -> bool:\n        \"\"\"Export results for a specific date to Google Sheets\"\"\"\n        try:\n            target_date = date or datetime.now().date()\n            \n            # Fetch results from storage\n            results = self.storage.get_results_by_date(target_date)\n            if not results:\n                logger.warning(f'No results found for {target_date}')\n                return False\n            \n            # Prepare data for sheets\n            sheet_data = self._format_for_sheets(results, target_date)\n            \n            # Update or create sheet for the date\n            sheet_name = f\"Data_{target_date.strftime('%Y_%m_%d')}\"\n            self._create_or_update_sheet(sheet_name, sheet_data)\n            \n            # Update summary sheet\n            self._update_summary_sheet(results, target_date)\n            \n            logger.info(f'Successfully exported {len(results)} results to Google Sheets')\n            return True\n            \n        except HttpError as e:\n            logger.error(f'Google Sheets API error: {e}')\n            return False\n        except Exception as e:\n            logger.error(f'Failed to export to Google Sheets: {e}')\n            return False\n    \n    def _format_for_sheets(self, results: List[Dict], date: datetime) -> List[List]:\n        \"\"\"Format results for Google Sheets with proper structure\"\"\"\n        headers = ['Date', 'University', 'Program', 'Applicant Count', 'Status', 'Last Updated']\n        rows = [headers]\n        \n        # Group by university\n        by_university = {}\n        for result in results:\n            uni = result['university']\n            if uni not in by_university:\n                by_university[uni] = []\n            by_university[uni].append(result)\n        \n        # Add data rows with grouping\n        for university, programs in sorted(by_university.items()):\n            # Add university header row\n            rows.append(['', f'=== {university} ===', '', '', '', ''])\n            \n            # Add program data\n            for program in sorted(programs, key=lambda x: x['program']):\n                rows.append([\n                    date.strftime('%Y-%m-%d'),\n                    university,\n                    program['program'],\n                    program['count'],\n                    'Success' if program['count'] >= 0 else 'Failed',\n                    datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n                ])\n            \n            # Add empty row for spacing\n            rows.append(['', '', '', '', '', ''])\n        \n        return rows\n    \n    def _create_or_update_sheet(self, sheet_name: str, data: List[List]):\n        \"\"\"Create new sheet or update existing one\"\"\"\n        sheets = self.service.spreadsheets()\n        \n        # Check if sheet exists\n        sheet_metadata = sheets.get(spreadsheetId=self.spreadsheet_id).execute()\n        sheet_exists = any(s['properties']['title'] == sheet_name \n                          for s in sheet_metadata.get('sheets', []))\n        \n        if not sheet_exists:\n            # Create new sheet\n            request = {\n                'addSheet': {\n                    'properties': {\n                        'title': sheet_name,\n                        'gridProperties': {\n                            'rowCount': len(data) + 100,\n                            'columnCount': 10\n                        }\n                    }\n                }\n            }\n            sheets.batchUpdate(\n                spreadsheetId=self.spreadsheet_id,\n                body={'requests': [request]}\n            ).execute()\n        \n        # Update sheet data\n        range_name = f'{sheet_name}!A1:F{len(data)}'\n        body = {'values': data}\n        \n        sheets.values().update(\n            spreadsheetId=self.spreadsheet_id,\n            range=range_name,\n            valueInputOption='RAW',\n            body=body\n        ).execute()\n        \n        # Apply formatting\n        self._apply_formatting(sheet_name, len(data))\n    \n    def _apply_formatting(self, sheet_name: str, row_count: int):\n        \"\"\"Apply formatting to make data more readable\"\"\"\n        sheet_id = self._get_sheet_id(sheet_name)\n        \n        requests = [\n            # Bold headers\n            {\n                'repeatCell': {\n                    'range': {\n                        'sheetId': sheet_id,\n                        'startRowIndex': 0,\n                        'endRowIndex': 1\n                    },\n                    'cell': {\n                        'userEnteredFormat': {\n                            'textFormat': {'bold': True},\n                            'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9}\n                        }\n                    },\n                    'fields': 'userEnteredFormat(textFormat,backgroundColor)'\n                }\n            },\n            # Auto-resize columns\n            {\n                'autoResizeDimensions': {\n                    'dimensions': {\n                        'sheetId': sheet_id,\n                        'dimension': 'COLUMNS',\n                        'startIndex': 0,\n                        'endIndex': 6\n                    }\n                }\n            },\n            # Add borders\n            {\n                'updateBorders': {\n                    'range': {\n                        'sheetId': sheet_id,\n                        'startRowIndex': 0,\n                        'endRowIndex': row_count,\n                        'startColumnIndex': 0,\n                        'endColumnIndex': 6\n                    },\n                    'top': {'style': 'SOLID'},\n                    'bottom': {'style': 'SOLID'},\n                    'left': {'style': 'SOLID'},\n                    'right': {'style': 'SOLID'},\n                    'innerHorizontal': {'style': 'SOLID'},\n                    'innerVertical': {'style': 'SOLID'}\n                }\n            }\n        ]\n        \n        self.service.spreadsheets().batchUpdate(\n            spreadsheetId=self.spreadsheet_id,\n            body={'requests': requests}\n        ).execute()\n    \n    def _update_summary_sheet(self, results: List[Dict], date: datetime):\n        \"\"\"Update summary sheet with historical tracking\"\"\"\n        summary_sheet = 'Summary'\n        \n        # Get existing summary data\n        try:\n            existing = self.service.spreadsheets().values().get(\n                spreadsheetId=self.spreadsheet_id,\n                range=f'{summary_sheet}!A:E'\n            ).execute()\n            existing_data = existing.get('values', [])\n        except:\n            existing_data = []\n        \n        # Prepare summary row\n        total_count = sum(r['count'] for r in results if r['count'] >= 0)\n        successful = len([r for r in results if r['count'] >= 0])\n        failed = len([r for r in results if r['count'] < 0])\n        \n        new_row = [\n            date.strftime('%Y-%m-%d'),\n            total_count,\n            successful,\n            failed,\n            datetime.now().strftime('%Y-%m-%d %H:%M:%S')\n        ]\n        \n        # Update or append\n        date_str = date.strftime('%Y-%m-%d')\n        row_updated = False\n        \n        for i, row in enumerate(existing_data[1:], 1):  # Skip header\n            if row and row[0] == date_str:\n                # Update existing row\n                range_name = f'{summary_sheet}!A{i+1}:E{i+1}'\n                self.service.spreadsheets().values().update(\n                    spreadsheetId=self.spreadsheet_id,\n                    range=range_name,\n                    valueInputOption='RAW',\n                    body={'values': [new_row]}\n                ).execute()\n                row_updated = True\n                break\n        \n        if not row_updated:\n            # Append new row\n            if not existing_data:\n                # Create header if sheet is empty\n                headers = ['Date', 'Total Applications', 'Successful Scrapes', 'Failed Scrapes', 'Last Updated']\n                existing_data = [headers]\n                self.service.spreadsheets().values().update(\n                    spreadsheetId=self.spreadsheet_id,\n                    range=f'{summary_sheet}!A1:E1',\n                    valueInputOption='RAW',\n                    body={'values': [headers]}\n                ).execute()\n            \n            # Append data\n            self.service.spreadsheets().values().append(\n                spreadsheetId=self.spreadsheet_id,\n                range=f'{summary_sheet}!A:E',\n                valueInputOption='RAW',\n                insertDataOption='INSERT_ROWS',\n                body={'values': [new_row]}\n            ).execute()\n    \n    def _get_sheet_id(self, sheet_name: str) -> int:\n        \"\"\"Get sheet ID by name\"\"\"\n        sheet_metadata = self.service.spreadsheets().get(\n            spreadsheetId=self.spreadsheet_id\n        ).execute()\n        \n        for sheet in sheet_metadata.get('sheets', []):\n            if sheet['properties']['title'] == sheet_name:\n                return sheet['properties']['sheetId']\n        \n        raise ValueError(f'Sheet {sheet_name} not found')\n    \n    def export_historical_data(self, days_back: int = 30):\n        \"\"\"Export historical data for analysis\"\"\"\n        try:\n            end_date = datetime.now().date()\n            start_date = end_date - timedelta(days=days_back)\n            \n            # Create historical overview sheet\n            sheet_name = f'Historical_{start_date.strftime(\"%Y%m%d\")}_{end_date.strftime(\"%Y%m%d\")}'\n            all_data = []\n            \n            current_date = start_date\n            while current_date <= end_date:\n                results = self.storage.get_results_by_date(current_date)\n                if results:\n                    for result in results:\n                        all_data.append([\n                            current_date.strftime('%Y-%m-%d'),\n                            result['university'],\n                            result['program'],\n                            result['count']\n                        ])\n                current_date += timedelta(days=1)\n            \n            if all_data:\n                headers = ['Date', 'University', 'Program', 'Count']\n                sheet_data = [headers] + sorted(all_data)\n                self._create_or_update_sheet(sheet_name, sheet_data)\n                logger.info(f'Exported {len(all_data)} historical records')\n            \n            return True\n        except Exception as e:\n            logger.error(f'Failed to export historical data: {e}')\n            return False\n```\n\nUpdate main.py to include Google Sheets export:\n```python\n# Add to imports\nfrom google_sheets import GoogleSheetsExporter\n\n# Add after storage.save_all_results(results)\nif os.environ.get('GOOGLE_SHEETS_ENABLED', 'false').lower() == 'true':\n    try:\n        sheets_exporter = GoogleSheetsExporter()\n        sheets_exporter.export_daily_results()\n        logger.info('Successfully exported results to Google Sheets')\n    except Exception as e:\n        logger.error(f'Google Sheets export failed: {e}')\n        # Don't fail the entire job if sheets export fails\n```\n\nAdd to requirements.txt:\n```\ngoogle-auth==2.23.4\ngoogle-auth-oauthlib==1.1.0\ngoogle-api-python-client==2.108.0\n```\n\nEnvironment variables needed:\n- GOOGLE_SHEETS_ID: The ID of the target Google Sheets document\n- GOOGLE_SERVICE_ACCOUNT_KEY: Base64-encoded service account JSON key\n- GOOGLE_SHEETS_ENABLED: true/false to enable/disable the feature\n\nSetup instructions:\n1. Create a Google Cloud Project and enable Sheets API\n2. Create a service account with Sheets API access\n3. Download the service account key JSON\n4. Base64 encode the JSON: `base64 -i key.json -o key.txt`\n5. Create a Google Sheet and share it with the service account email\n6. Add the Sheet ID and encoded key to environment variables",
+        "testStrategy": "1. Create test Google Sheet and service account for testing\n2. Run `python -c \"from google_sheets import GoogleSheetsExporter; exporter = GoogleSheetsExporter(); exporter.export_daily_results()\"` to test authentication and basic export\n3. Verify sheet contains properly formatted data with university groupings and headers\n4. Test historical export with `exporter.export_historical_data(7)` and verify 7-day historical sheet is created\n5. Simulate API failures by providing invalid credentials and verify error handling logs appropriately without crashing\n6. Run full scraping pipeline with `GOOGLE_SHEETS_ENABLED=true python main.py` and verify automatic export occurs\n7. Check Summary sheet updates correctly with aggregate statistics\n8. Test with missing data (some scrapers failing) and verify partial results are still exported\n9. Verify sheet permissions allow service account write access\n10. Monitor Railway logs after deployment to ensure daily exports succeed",
+        "status": "pending",
+        "dependencies": [
+          3,
+          7,
+          8
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Google Cloud Project and Service Account",
+            "description": "Create Google Cloud Project, enable Sheets API, create service account with appropriate permissions, and download credentials JSON file",
+            "dependencies": [],
+            "details": "1. Create new Google Cloud Project or use existing one\n2. Enable Google Sheets API in the project\n3. Create a service account with 'Editor' role for Sheets API\n4. Generate and download JSON key file for the service account\n5. Base64 encode the JSON key: `base64 -i service-account-key.json -o encoded-key.txt`\n6. Store the encoded key value for environment variable GOOGLE_SERVICE_ACCOUNT_KEY",
+            "status": "pending",
+            "testStrategy": "Verify service account creation by checking Google Cloud Console, test base64 encoding/decoding of credentials, validate JSON structure of service account key"
+          },
+          {
+            "id": 2,
+            "title": "Create and Configure Target Google Sheet",
+            "description": "Create Google Sheet document for data export, set up initial structure with Summary sheet, and configure sharing permissions",
+            "dependencies": [
+              "11.1"
+            ],
+            "details": "1. Create new Google Sheet in Google Drive\n2. Note the spreadsheet ID from the URL (between /d/ and /edit)\n3. Share the sheet with the service account email (found in JSON key) with 'Editor' permissions\n4. Create initial 'Summary' sheet tab with headers: Date, Total Applications, Successful Scrapes, Failed Scrapes, Last Updated\n5. Set up formatting for the Summary sheet (bold headers, borders, background colors)\n6. Store the spreadsheet ID for GOOGLE_SHEETS_ID environment variable",
+            "status": "pending",
+            "testStrategy": "Manually verify sheet creation and permissions, test service account can access the sheet via API, verify Summary sheet structure is correct"
+          },
+          {
+            "id": 3,
+            "title": "Implement Google Sheets Authentication and Basic Operations",
+            "description": "Create google_sheets.py module with GoogleSheetsExporter class implementing authentication and basic sheet operations",
+            "dependencies": [
+              "11.1",
+              "11.2"
+            ],
+            "details": "1. Create google_sheets.py file in project root\n2. Implement GoogleSheetsExporter.__init__ and _authenticate methods\n3. Add error handling for missing credentials or invalid authentication\n4. Implement _get_sheet_id helper method to find sheet IDs by name\n5. Create basic test script to verify authentication works\n6. Add required dependencies to requirements.txt: google-auth==2.23.4, google-auth-oauthlib==1.1.0, google-api-python-client==2.108.0",
+            "status": "pending",
+            "testStrategy": "Run `python -c \"from google_sheets import GoogleSheetsExporter; exporter = GoogleSheetsExporter()\"` to test authentication, verify service object creation, test with invalid credentials to ensure proper error handling"
+          },
+          {
+            "id": 4,
+            "title": "Implement Core Export Functionality",
+            "description": "Implement methods for exporting daily results, formatting data, creating/updating sheets, and applying formatting",
+            "dependencies": [
+              "11.3"
+            ],
+            "details": "1. Implement export_daily_results method to fetch and export data for a specific date\n2. Create _format_for_sheets method to structure data with university grouping and proper headers\n3. Implement _create_or_update_sheet to handle sheet creation and data updates\n4. Add _apply_formatting method for professional appearance (bold headers, borders, auto-resize)\n5. Implement _update_summary_sheet for historical tracking\n6. Add comprehensive logging for debugging and monitoring",
+            "status": "pending",
+            "testStrategy": "Test with sample data from storage, verify sheet creation for new dates, test updating existing sheets, validate formatting is applied correctly, check summary sheet updates properly"
+          },
+          {
+            "id": 5,
+            "title": "Integrate with Main Application and Add Historical Export",
+            "description": "Update main.py to include Google Sheets export after scraping, implement historical data export functionality, and add environment variable configuration",
+            "dependencies": [
+              "11.4"
+            ],
+            "details": "1. Update main.py imports to include GoogleSheetsExporter\n2. Add conditional export after storage.save_all_results based on GOOGLE_SHEETS_ENABLED env var\n3. Implement export_historical_data method for bulk historical exports\n4. Add error handling to prevent sheets export failures from breaking main scraping\n5. Update deployment configuration files to include new environment variables\n6. Create documentation for setup and usage of Google Sheets integration",
+            "status": "pending",
+            "testStrategy": "Run full scraping pipeline with export enabled, verify data appears in Google Sheets, test with export disabled to ensure no errors, test historical export with various date ranges, verify error handling doesn't break main process"
           }
         ]
       }
     ],
     "metadata": {
       "created": "2025-07-22T15:17:40.038Z",
-      "updated": "2025-07-22T16:45:44.766Z",
+      "updated": "2025-07-22T18:15:03.881Z",
       "description": "Tasks for master context"
     }
   }

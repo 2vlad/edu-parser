@@ -1,114 +1,262 @@
 #!/usr/bin/env python3
-"""Main entry point for edu-parser scraping system."""
+"""
+Main entry point for the edu-parser scraper system.
 
-import sys
+This script serves as the primary cron job entry point that orchestrates
+the entire scraping process using the registry and runner components.
+"""
+
 import os
+import sys
+import time
+import signal
 from datetime import datetime
-import traceback
+from typing import List, Dict, Any
 
-# Add project root to Python path
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from core.logging_config import setup_logging, get_logger
-from core.storage import Storage, StorageError
+from core.logging_config import setup_logging, get_logger, log_performance
+from core.storage import Storage
+from core.registry import ScraperRegistry, get_all_scrapers
+from core.runner import ScraperRunner
 
 
-def main():
-    """Main entry point for the edu-parser system."""
+def setup_signal_handlers():
+    """Set up signal handlers for graceful shutdown."""
+    def signal_handler(signum, frame):
+        logger = get_logger(__name__)
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        sys.exit(0)
     
-    # Initialize logging first
-    setup_logging(log_level=os.environ.get("LOG_LEVEL", "INFO"))
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+
+def validate_environment():
+    """Validate that all required environment variables are set."""
     logger = get_logger(__name__)
     
-    logger.info("=" * 60)
-    logger.info("Starting edu-parser system")
-    logger.info(f"Run started at: {datetime.now().isoformat()}")
-    logger.info("=" * 60)
+    required_vars = ['SUPABASE_URL', 'SUPABASE_KEY']
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    
+    if missing_vars:
+        logger.error(f"Missing required environment variables: {missing_vars}")
+        logger.error("Please set these variables in your .env file or environment")
+        return False
+    
+    logger.info("Environment validation passed")
+    return True
+
+
+def initialize_components():
+    """Initialize storage, registry, and runner components."""
+    logger = get_logger(__name__)
     
     try:
         # Initialize storage
-        logger.info("Initializing storage system...")
+        logger.info("Initializing storage component...")
         storage = Storage()
-        logger.info("Storage system initialized successfully")
         
-        # Get enabled scrapers
-        logger.info("Retrieving enabled scrapers...")
-        enabled_scrapers = storage.get_enabled_scrapers()
+        # Initialize registry and discover scrapers
+        logger.info("Initializing scraper registry...")
+        registry = ScraperRegistry(storage=storage)
+        discovered = registry.discover_scrapers()
+        logger.info(f"Registry discovered {discovered} scrapers")
         
-        if not enabled_scrapers:
-            logger.error("No enabled scrapers found in database")
-            return False
+        # Initialize runner
+        logger.info("Initializing scraper runner...")
+        runner = ScraperRunner(storage=storage, max_workers=5)
         
-        logger.info(f"Found {len(enabled_scrapers)} enabled scrapers")
-        
-        # Log scraper summary by university
-        universities = {}
-        for scraper in enabled_scrapers:
-            scraper_id = scraper['scraper_id']
-            if scraper_id.startswith('hse_'):
-                universities.setdefault('HSE', []).append(scraper)
-            elif scraper_id.startswith('mipt_'):
-                universities.setdefault('MIPT', []).append(scraper)
-            elif scraper_id.startswith('mephi_'):
-                universities.setdefault('MEPhI', []).append(scraper)
-            else:
-                universities.setdefault('Other', []).append(scraper)
-        
-        for uni, scrapers in universities.items():
-            logger.info(f"   - {uni}: {len(scrapers)} scrapers")
-        
-        # TODO: Run scrapers (will be implemented in subsequent tasks)
-        logger.warning("Scraper execution not yet implemented - coming in next tasks")
-        logger.info("For now, just validating system readiness...")
-        
-        # Test basic functionality
-        today_results = storage.get_today_results()
-        logger.info(f"Found {len(today_results)} existing results for today")
-        
-        logger.info("=" * 60)
-        logger.info("edu-parser system validation completed successfully")
-        logger.info(f"Run completed at: {datetime.now().isoformat()}")
-        logger.info("=" * 60)
-        
-        return True
-        
-    except StorageError as e:
-        logger.error(f"Storage system error: {e}")
-        logger.error("Cannot proceed without database connectivity")
-        return False
+        return storage, registry, runner
         
     except Exception as e:
-        logger.error(f"Unexpected error occurred: {e}")
+        logger.error(f"Failed to initialize components: {e}")
+        raise
+
+
+def run_scrapers(registry: ScraperRegistry, runner: ScraperRunner, mode: str = "enabled") -> List[Dict[str, Any]]:
+    """
+    Run scrapers based on the specified mode.
+    
+    Args:
+        registry: ScraperRegistry instance
+        runner: ScraperRunner instance  
+        mode: "enabled" to run only enabled scrapers, "all" to run all discovered scrapers
+        
+    Returns:
+        List of scraper results
+    """
+    logger = get_logger(__name__)
+    
+    if mode == "enabled":
+        logger.info("Loading enabled scrapers from database...")
+        scrapers = registry.load_enabled_scrapers()
+    else:
+        logger.info("Loading all discovered scrapers...")
+        scrapers = registry.get_all_discovered_scrapers()
+    
+    if not scrapers:
+        logger.warning(f"No scrapers found in {mode} mode")
+        return []
+    
+    logger.info(f"Found {len(scrapers)} scrapers to run in {mode} mode")
+    
+    # Log scraper details
+    for i, (func, config) in enumerate(scrapers[:5], 1):  # Show first 5
+        scraper_id = config.get('scraper_id', 'unknown')
+        name = config.get('name', 'Unknown')
+        logger.info(f"  {i}. {scraper_id}: {name}")
+    
+    if len(scrapers) > 5:
+        logger.info(f"  ... and {len(scrapers) - 5} more scrapers")
+    
+    # Run all scrapers
+    start_time = time.time()
+    results = runner.run_all_scrapers(scrapers)
+    duration = time.time() - start_time
+    
+    log_performance("main_scraping_session", duration, f"scrapers={len(scrapers)}, mode={mode}")
+    
+    return results
+
+
+def analyze_results(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analyze scraper results and generate summary statistics.
+    
+    Args:
+        results: List of scraper results
+        
+    Returns:
+        Summary statistics dictionary
+    """
+    if not results:
+        return {
+            'total': 0,
+            'successful': 0,
+            'failed': 0,
+            'success_rate': 0.0,
+            'total_applicants': 0,
+            'errors': []
+        }
+    
+    successful = [r for r in results if r.get('status') == 'success']
+    failed = [r for r in results if r.get('status') == 'error']
+    
+    total_applicants = 0
+    for result in successful:
+        count = result.get('count')
+        if count is not None and isinstance(count, (int, float)):
+            total_applicants += count
+    
+    error_details = []
+    for result in failed:
+        error_details.append({
+            'scraper_id': result.get('scraper_id', 'unknown'),
+            'name': result.get('name', 'Unknown'),
+            'error': result.get('error', 'Unknown error')
+        })
+    
+    return {
+        'total': len(results),
+        'successful': len(successful),
+        'failed': len(failed),
+        'success_rate': len(successful) / len(results) * 100,
+        'total_applicants': total_applicants,
+        'errors': error_details
+    }
+
+
+def main():
+    """Main entry point for the scraper system."""
+    # Set up logging first
+    setup_logging(log_level="INFO")
+    logger = get_logger(__name__)
+    
+    # Set up signal handlers
+    setup_signal_handlers()
+    
+    logger.info("=" * 60)
+    logger.info("STARTING EDU-PARSER SCRAPING SESSION")
+    logger.info(f"Timestamp: {datetime.now().isoformat()}")
+    logger.info("=" * 60)
+    
+    session_start_time = time.time()
+    
+    try:
+        # Validate environment
+        if not validate_environment():
+            sys.exit(1)
+        
+        # Initialize components
+        storage, registry, runner = initialize_components()
+        
+        # Determine run mode (can be set via environment variable)
+        run_mode = os.getenv('SCRAPER_MODE', 'enabled').lower()
+        if run_mode not in ['enabled', 'all']:
+            logger.warning(f"Invalid SCRAPER_MODE '{run_mode}', defaulting to 'enabled'")
+            run_mode = 'enabled'
+        
+        logger.info(f"Running in '{run_mode}' mode")
+        
+        # Run scrapers
+        results = run_scrapers(registry, runner, run_mode)
+        
+        if not results:
+            logger.warning("No results obtained from scrapers")
+            sys.exit(1)
+        
+        # Analyze results
+        summary = analyze_results(results)
+        
+        # Log comprehensive summary
+        logger.info("-" * 60)
+        logger.info("SCRAPING SESSION SUMMARY")
+        logger.info("-" * 60)
+        logger.info(f"Total scrapers: {summary['total']}")
+        logger.info(f"Successful: {summary['successful']}")
+        logger.info(f"Failed: {summary['failed']}")
+        logger.info(f"Success rate: {summary['success_rate']:.1f}%")
+        logger.info(f"Total applicants found: {summary['total_applicants']:,}")
+        
+        session_duration = time.time() - session_start_time
+        logger.info(f"Session duration: {session_duration:.2f}s")
+        
+        # Log errors if any
+        if summary['errors']:
+            logger.error(f"Errors encountered in {len(summary['errors'])} scrapers:")
+            for error in summary['errors'][:10]:  # Show first 10 errors
+                logger.error(f"  - {error['scraper_id']}: {error['error']}")
+            if len(summary['errors']) > 10:
+                logger.error(f"  ... and {len(summary['errors']) - 10} more errors")
+        
+        # Determine exit code based on success rate
+        success_threshold = float(os.getenv('SUCCESS_THRESHOLD', '0.7'))  # 70% by default
+        if summary['success_rate'] < success_threshold * 100:
+            logger.error(f"Success rate {summary['success_rate']:.1f}% below threshold {success_threshold * 100}%")
+            logger.error("Marking this run as failed")
+            sys.exit(1)
+        
+        logger.info("=" * 60)
+        logger.info("SCRAPING SESSION COMPLETED SUCCESSFULLY")
+        logger.info("=" * 60)
+        
+    except KeyboardInterrupt:
+        logger.info("Scraping session interrupted by user")
+        sys.exit(130)
+    except Exception as e:
+        session_duration = time.time() - session_start_time
+        logger.error(f"FATAL ERROR in scraping session: {e}")
+        logger.error(f"Session failed after {session_duration:.2f}s")
+        
+        # Log full traceback for debugging
+        import traceback
         logger.error("Full traceback:")
+        logger.error(traceback.format_exc())
         
-        # Log full traceback to file but not console
-        file_logger = get_logger('error_details')
-        file_logger.error("Full error traceback:", exc_info=True)
-        
-        return False
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    try:
-        success = main()
-        exit_code = 0 if success else 1
-        
-        # Final log message
-        logger = get_logger(__name__)
-        if success:
-            logger.info("System exited successfully")
-        else:
-            logger.error("System exited with errors")
-            
-        sys.exit(exit_code)
-        
-    except KeyboardInterrupt:
-        logger = get_logger(__name__)
-        logger.warning("System interrupted by user (Ctrl+C)")
-        sys.exit(130)
-    except Exception as e:
-        # This should catch any logging setup errors
-        print(f"FATAL: Failed to initialize logging or main system: {e}")
-        traceback.print_exc()
-        sys.exit(1)
+    main()

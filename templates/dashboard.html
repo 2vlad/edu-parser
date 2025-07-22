@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edu Parser Dashboard - {{ date }}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .date-nav {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .date-nav a {
+            padding: 8px 16px;
+            background: #007aff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .date-nav a:hover {
+            background: #0051d5;
+        }
+        
+        .date-nav a.current {
+            background: #34c759;
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            font-weight: 500;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .stat-card.success .value {
+            color: #34c759;
+        }
+        
+        .stat-card.error .value {
+            color: #ff3b30;
+        }
+        
+        .stat-card .rate {
+            font-size: 18px;
+            color: #86868b;
+            margin-top: 4px;
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .university-section {
+            border-bottom: 1px solid #e5e5e7;
+        }
+        
+        .university-section:last-child {
+            border-bottom: none;
+        }
+        
+        .university-header {
+            background: #f5f5f7;
+            padding: 16px 24px;
+            font-weight: 600;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .university-header:hover {
+            background: #e8e8ed;
+        }
+        
+        .university-stats {
+            font-size: 14px;
+            font-weight: normal;
+            color: #86868b;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #fafafa;
+            padding: 12px 24px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+            color: #86868b;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f2;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .status-badge.success {
+            background: #d1f2d9;
+            color: #00873e;
+        }
+        
+        .status-badge.error {
+            background: #ffd6d6;
+            color: #d70015;
+        }
+        
+        .count {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .error-message {
+            color: #ff3b30;
+            font-size: 13px;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #86868b;
+        }
+        
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #1d1d1f;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 12px;
+            }
+            
+            .date-nav {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📊 Edu Parser Dashboard</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="date-nav">
+            <span style="color: #86868b; margin-right: 10px;">View date:</span>
+            {% for nav_date in recent_dates %}
+                <a href="/?date={{ nav_date }}" {% if nav_date == date.isoformat() %}class="current"{% endif %}>
+                    {{ nav_date }}
+                </a>
+            {% endfor %}
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Scrapers</h3>
+                <div class="value">{{ total }}</div>
+            </div>
+            
+            <div class="stat-card success">
+                <h3>Successful</h3>
+                <div class="value">{{ success }}</div>
+                <div class="rate">{{ "%.1f"|format(success_rate) }}%</div>
+            </div>
+            
+            <div class="stat-card error">
+                <h3>Failed</h3>
+                <div class="value">{{ errors }}</div>
+            </div>
+        </div>
+        
+        <div class="results-section">
+            {% if results_by_university %}
+                {% for university, programs in results_by_university.items()|sort %}
+                <div class="university-section">
+                    <div class="university-header">
+                        <span>{{ university }}</span>
+                        <span class="university-stats">
+                            {{ programs|length }} programs | 
+                            {{ programs|selectattr('status', 'equalto', 'success')|list|length }} successful
+                        </span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Applicant Count</th>
+                                <th>Status</th>
+                                <th>Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in programs|sort(attribute='program') %}
+                            <tr>
+                                <td>{{ result.program }}</td>
+                                <td>
+                                    {% if result.count is not none %}
+                                        <span class="count">{{ result.count }}</span>
+                                    {% else %}
+                                        <span style="color: #86868b;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="status-badge {{ result.status }}">
+                                        {{ result.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if result.error %}
+                                        <span class="error-message" title="{{ result.error }}">
+                                            {{ result.error }}
+                                        </span>
+                                    {% else %}
+                                        <span style="color: #86868b;">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <h2>No Data Available</h2>
+                    <p>No scraping results found for {{ date }}.</p>
+                    <p>Try selecting a different date from the navigation above.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds if viewing today's data
+        const currentDate = '{{ date.isoformat() }}';
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (currentDate === today) {
+            setTimeout(() => {
+                window.location.reload();
+            }, 30000);
+        }
+    </script>
+</body>
+</html>

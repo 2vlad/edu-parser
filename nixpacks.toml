@@ -1,0 +1,21 @@
+[phases.setup]
+nixPkgs = ['python311', 'pip', 'libffi', 'openssl', 'libxml2', 'libxslt', 'zlib']
+
+[phases.install]
+cmds = [
+    'pip install --upgrade pip',
+    'pip install -r requirements.txt'
+]
+
+[phases.build]
+cmds = [
+    'python -c "import sys; print(f\"Python {sys.version}\")"',
+    'python -c "import pandas, httpx, beautifulsoup4, supabase; print(\"Core dependencies imported successfully\")"'
+]
+
+[start]
+cmd = 'python main.py'
+
+[variables]
+PYTHONPATH = '/app'
+PYTHONUNBUFFERED = '1'
