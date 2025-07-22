@@ -42,6 +42,7 @@ HSE_TARGET_PROGRAMS = [
 
 # Column name for application counts (may vary)
 APPLICATION_COUNT_COLUMNS = [
+    "Количество поданных заявлений в магистратуру\nМосква на 22.07.2025\nОсновной этап",  # Current format July 2025
     "Количество заявлений (места с оплатой стоимости обучения)",
     "Количество заявлений",
     "Заявлений",
