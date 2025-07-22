@@ -210,14 +210,13 @@ def save_result_to_db(result):
     """Сохранить результат в базу данных"""
     try:
         storage = Storage()
-        success = storage.save_scraper_result(
-            scraper_id=result.get('scraper_id', 'manual_test'),
-            name=result.get('name', 'Manual Test'),
-            count=result.get('count'),
-            status=result.get('status', 'unknown'),
-            error=result.get('error'),
-            date=datetime.now().date()
-        )
+        success = storage.save_result({
+            'scraper_id': result.get('scraper_id', 'manual_test'),
+            'name': result.get('name', 'Manual Test'),
+            'count': result.get('count'),
+            'status': result.get('status', 'unknown'),
+            'error': result.get('error')
+        })
         
         if success:
             print("✅ Результат сохранен в базу данных")

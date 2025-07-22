@@ -127,48 +127,62 @@ def find_program_in_dataframe(df: pd.DataFrame, program_name: str, count_column:
     Returns:
         Dictionary with program data, or None if not found
     """
-    # Look for exact matches first
-    for index, row in df.iterrows():
-        # Check each text column for program name
-        for col in df.columns:
-            if df[col].dtype == 'object':  # Text columns
-                cell_value = str(row[col]).strip()
-                
-                # Exact match
-                if program_name.lower() == cell_value.lower():
-                    count = row.get(count_column, None)
-                    logger.info(f"Found exact match for '{program_name}' with {count} applications")
-                    return {
-                        'program_name': program_name,
-                        'found_text': cell_value,
-                        'count': count,
-                        'match_type': 'exact',
-                        'row_index': index
-                    }
+    # Based on debug analysis: program names are in column 0, counts in column 6
+    program_col_idx = 0
+    count_col_idx = 6
     
-    # Try fuzzy matching
+    # Ensure we have enough columns
+    if len(df.columns) <= max(program_col_idx, count_col_idx):
+        logger.warning(f"DataFrame doesn't have enough columns. Has {len(df.columns)}, need at least {max(program_col_idx, count_col_idx) + 1}")
+        return None
+    
+    program_column = df.columns[program_col_idx]
+    actual_count_column = df.columns[count_col_idx]
+    
+    logger.info(f"Looking for program '{program_name}' in column '{program_column}' with counts in column '{actual_count_column}'")
+    
+    # Look for exact matches first in the program column
+    for index, row in df.iterrows():
+        cell_value = str(row[program_column]).strip()
+        
+        if pd.isna(row[program_column]) or cell_value == 'nan':
+            continue
+            
+        # Exact match
+        if program_name.lower() == cell_value.lower():
+            count = row[actual_count_column]
+            logger.info(f"Found exact match for '{program_name}' with {count} applications")
+            return {
+                'program_name': program_name,
+                'found_text': cell_value,
+                'count': count,
+                'match_type': 'exact',
+                'row_index': index
+            }
+    
+    # Try fuzzy matching in the program column
     best_match = None
     best_similarity = 0
     
     for index, row in df.iterrows():
-        for col in df.columns:
-            if df[col].dtype == 'object':  # Text columns
-                cell_value = str(row[col]).strip()
-                
-                if len(cell_value) > 10:  # Skip very short strings
-                    similarity = fuzz.ratio(program_name.lower(), cell_value.lower())
-                    
-                    if similarity > best_similarity and similarity > 70:  # 70% threshold
-                        count = row.get(count_column, None)
-                        best_match = {
-                            'program_name': program_name,
-                            'found_text': cell_value,
-                            'count': count,
-                            'match_type': 'fuzzy',
-                            'similarity': similarity,
-                            'row_index': index
-                        }
-                        best_similarity = similarity
+        cell_value = str(row[program_column]).strip()
+        
+        if pd.isna(row[program_column]) or cell_value == 'nan' or len(cell_value) <= 10:
+            continue
+            
+        similarity = fuzz.ratio(program_name.lower(), cell_value.lower())
+        
+        if similarity > best_similarity and similarity > 70:  # 70% threshold
+            count = row[actual_count_column]
+            best_match = {
+                'program_name': program_name,
+                'found_text': cell_value,
+                'count': count,
+                'match_type': 'fuzzy',
+                'similarity': similarity,
+                'row_index': index
+            }
+            best_similarity = similarity
     
     if best_match:
         logger.info(f"Found fuzzy match for '{program_name}': '{best_match['found_text']}' "

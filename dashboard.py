@@ -271,66 +271,6 @@ def api_scrapers():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/run-test-scraper', methods=['POST'])
-@require_access
-def run_test_scraper():
-    """Run a single test scraper."""
-    try:
-        from core.registry import ScraperRegistry
-        from core.runner import ScraperRunner
-        
-        # Initialize components
-        storage = Storage()
-        registry = ScraperRegistry(storage=storage)
-        runner = ScraperRunner(storage=storage, max_workers=1)
-        
-        # Discover scrapers
-        registry.discover_scrapers()
-        
-        # Get first scraper as test
-        if registry.scrapers:
-            scraper_id = list(registry.scrapers.keys())[0]
-            scraper_info = registry.scrapers[scraper_id]
-            
-            # Run single scraper
-            scraper_func = scraper_info['function']
-            config = scraper_info['config']
-            
-            logger.info(f"Running test scraper: {scraper_id}")
-            
-            # Execute scraper
-            import threading
-            import time
-            
-            def run_scraper():
-                try:
-                    result = scraper_func()
-                    if result and result.get('status') == 'success':
-                        storage.save_scraper_result(
-                            scraper_id=result.get('scraper_id', scraper_id),
-                            name=result.get('name', config.get('name', 'Test')),
-                            count=result.get('count'),
-                            status=result.get('status'),
-                            error=result.get('error')
-                        )
-                except Exception as e:
-                    logger.error(f"Test scraper error: {e}")
-            
-            # Run in background
-            thread = threading.Thread(target=run_scraper)
-            thread.start()
-            
-            return jsonify({
-                'status': 'started',
-                'scraper': config.get('name', scraper_id),
-                'message': 'Test scraper started in background'
-            })
-        else:
-            return jsonify({'error': 'No scrapers found'}), 404
-            
-    except Exception as e:
-        logger.error(f"Run test scraper error: {e}")
-        return jsonify({'error': str(e)}), 500
 
 
 @app.errorhandler(404)
