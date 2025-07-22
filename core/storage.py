@@ -1,16 +1,18 @@
 """Core storage module for interacting with Supabase database."""
 
 import os
-import logging
 from datetime import date, datetime
 from typing import Dict, List, Optional, Any
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
+from .logging_config import get_logger, log_performance
+import time
+
 # Load environment variables
 load_dotenv()
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class StorageError(Exception):
@@ -83,15 +85,20 @@ class Storage:
         Returns:
             bool: True if save was successful, False otherwise.
         """
+        start_time = time.time()
+        scraper_id = result.get('scraper_id', 'unknown')
+        
+        logger.debug(f"Starting to save result for {scraper_id}")
+        
         # Validate required fields
         required_fields = ['scraper_id', 'name', 'status']
         for field in required_fields:
             if field not in result:
-                logger.error(f"Missing required field: {field}")
+                logger.error(f"Validation failed - Missing required field: {field} for {scraper_id}")
                 return False
         
         if result['status'] not in ['success', 'error']:
-            logger.error(f"Invalid status: {result['status']}. Must be 'success' or 'error'")
+            logger.error(f"Validation failed - Invalid status: {result['status']} for {scraper_id}. Must be 'success' or 'error'")
             return False
         
         try:
@@ -108,12 +115,18 @@ class Storage:
             # Remove None values to let database handle defaults
             data = {k: v for k, v in data.items() if v is not None}
             
+            logger.debug(f"Inserting data for {scraper_id}: {data}")
             response = self.client.table('applicant_counts').insert(data).execute()
-            logger.info(f"Successfully saved result for {result['scraper_id']}")
+            
+            duration = time.time() - start_time
+            logger.info(f"Successfully saved result for {scraper_id} (count: {result.get('count', 'N/A')})")
+            log_performance("save_result", duration, f"scraper_id={scraper_id}")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to save result for {result.get('scraper_id', 'unknown')}: {e}")
+            duration = time.time() - start_time
+            logger.error(f"Failed to save result for {scraper_id}: {e}")
+            log_performance("save_result_failed", duration, f"scraper_id={scraper_id}, error={str(e)[:100]}")
             return False
     
     def get_enabled_scrapers(self) -> List[Dict[str, Any]]:
