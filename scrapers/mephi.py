@@ -17,12 +17,12 @@ logger = get_logger(__name__)
 
 # MEPhI program URLs and names
 MEPHI_PROGRAMS = [
-    ('Машинное обучение и анализ данных', 'https://pk.mephi.ru/abit/2024/lists_v2/4618b23e.html'),
-    ('Информационные системы и технологии', 'https://pk.mephi.ru/abit/2024/lists_v2/a6c8f9d2.html'),
-    ('Кибербезопасность', 'https://pk.mephi.ru/abit/2024/lists_v2/7e2a4b1f.html'),
-    ('Математическое моделирование', 'https://pk.mephi.ru/abit/2024/lists_v2/c3d5e8a7.html'),
-    ('Прикладная математика и информатика', 'https://pk.mephi.ru/abit/2024/lists_v2/9f1b6c4e.html'),
-    ('Ядерные физика и технологии', 'https://pk.mephi.ru/abit/2024/lists_v2/2e7a9b5d.html')
+    ('Машинное обучение и анализ данных', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12843/original/no'),
+    ('Информационные системы и технологии', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12768/original/no'),
+    ('Кибербезопасность', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12847/original/no'),
+    ('Математическое моделирование', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12816/original/no'),
+    ('Прикладная математика и информатика', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12764/original/no'),
+    ('Ядерные физика и технологии', 'https://org.mephi.ru/pupil-rating/get-rating/entity/13584/original/no')
 ]
 
 
