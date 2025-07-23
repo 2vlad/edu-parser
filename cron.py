@@ -13,6 +13,27 @@ def main():
     """Run the scraper job."""
     print(f"🚀 Starting Edu Parser Cron Job at {datetime.now()}")
     
+    # Detailed environment debugging for cron.py
+    print("🔍 DEBUG: cron.py environment analysis")
+    print(f"🔍 DEBUG: __file__ = {__file__}")
+    print(f"🔍 DEBUG: sys.argv = {sys.argv}")
+    print(f"🔍 DEBUG: Current working directory = {os.getcwd()}")
+    
+    # Check PORT variable in cron environment
+    port_env = os.environ.get('PORT')
+    print(f"🔍 DEBUG: PORT environment variable in cron.py = '{port_env}' (type: {type(port_env)})")
+    
+    if port_env == '$PORT':
+        print("🚨 DEBUG: FOUND THE PROBLEM! PORT contains literal '$PORT' in cron.py!")
+    elif port_env and '$' in port_env:
+        print(f"🚨 DEBUG: PORT contains dollar sign: '{port_env}'")
+    
+    # Check all environment variables that might be relevant
+    relevant_vars = ['PORT', 'FLASK_DEBUG', 'SCRAPER_MODE', 'RAILWAY_CRON_SCHEDULE']
+    for var in relevant_vars:
+        value = os.environ.get(var)
+        print(f"🔍 DEBUG: {var} = '{value}'")
+    
     try:
         # Set clean environment to prevent any Flask/PORT conflicts
         env = os.environ.copy()

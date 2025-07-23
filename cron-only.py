@@ -19,6 +19,28 @@ def main():
     """Run all scrapers and save results."""
     print(f"🚀 Starting standalone cron scraper run at {datetime.now()}")
     
+    # Detailed environment debugging for cron
+    print("🔍 DEBUG: cron-only.py environment analysis")
+    print(f"🔍 DEBUG: __file__ = {__file__}")
+    print(f"🔍 DEBUG: sys.argv = {sys.argv}")
+    print(f"🔍 DEBUG: Current working directory = {os.getcwd()}")
+    
+    # Check PORT variable in cron environment
+    port_env = os.environ.get('PORT')
+    print(f"🔍 DEBUG: PORT environment variable in cron = '{port_env}' (type: {type(port_env)})")
+    
+    # Check all environment variables that might be relevant
+    relevant_vars = ['PORT', 'FLASK_DEBUG', 'SCRAPER_MODE', 'RAILWAY_CRON_SCHEDULE']
+    for var in relevant_vars:
+        value = os.environ.get(var)
+        print(f"🔍 DEBUG: {var} = '{value}'")
+    
+    # Check if this is being run as cron vs standalone
+    if 'cron' in ' '.join(sys.argv).lower() or os.environ.get('RAILWAY_CRON_SCHEDULE'):
+        print("🔍 DEBUG: Detected cron execution context")
+    else:
+        print("🔍 DEBUG: Detected standalone execution context")
+    
     try:
         config = Config()
         storage = SupabaseStorage(config)

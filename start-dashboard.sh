@@ -3,18 +3,45 @@
 # Start script for the Edu Parser Dashboard
 # This script can be used for local development or production deployment
 
+echo "🔍 DEBUG: Starting start-dashboard.sh script"
+echo "🔍 DEBUG: Script arguments: $@"
+echo "🔍 DEBUG: Current working directory: $(pwd)"
+echo "🔍 DEBUG: User: $(whoami)"
+
 # Load environment variables
 if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
+    echo "🔍 DEBUG: Loaded .env file"
+else
+    echo "🔍 DEBUG: No .env file found"
+fi
+
+# Detailed PORT debugging
+echo "🔍 DEBUG: Raw PORT variable before processing: '$PORT'"
+echo "🔍 DEBUG: PORT type check:"
+if [ -z "$PORT" ]; then
+    echo "🔍 DEBUG: PORT is empty/unset"
+elif [ "$PORT" = "\$PORT" ]; then
+    echo "🚨 DEBUG: PORT contains literal '\$PORT' string!"
+elif [ "$PORT" = '$PORT' ]; then
+    echo "🚨 DEBUG: PORT contains literal '\$PORT' string (single quotes)!"
+else
+    echo "🔍 DEBUG: PORT appears to have a value: '$PORT'"
 fi
 
 # Set default values if not provided
 # Railway provides PORT, but sometimes it's empty during cron runs
-if [ -z "$PORT" ]; then
+if [ -z "$PORT" ] || [ "$PORT" = "\$PORT" ] || [ "$PORT" = '$PORT' ]; then
     export PORT=8080
+    echo "🔍 DEBUG: Set PORT to default: $PORT"
+else
+    echo "🔍 DEBUG: Using existing PORT: $PORT"
 fi
+
 export FLASK_DEBUG=${FLASK_DEBUG:-false}
 
+echo "🔍 DEBUG: Final PORT value: $PORT"
+echo "🔍 DEBUG: Final FLASK_DEBUG value: $FLASK_DEBUG"
 echo "Starting Edu Parser Dashboard..."
 echo "Port: $PORT"
 echo "Debug mode: $FLASK_DEBUG"

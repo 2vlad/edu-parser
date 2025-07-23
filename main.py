@@ -174,6 +174,30 @@ def main():
     setup_logging(log_level="INFO")
     logger = get_logger(__name__)
     
+    # Detailed environment debugging for main.py
+    logger.info("🔍 DEBUG: main.py execution started")
+    logger.info(f"🔍 DEBUG: __file__ = {__file__}")
+    logger.info(f"🔍 DEBUG: sys.argv = {sys.argv}")
+    logger.info(f"🔍 DEBUG: Current working directory = {os.getcwd()}")
+    logger.info(f"🔍 DEBUG: Python path = {sys.path[:3]}...")  # Show first 3 paths
+    
+    # Check PORT variable in main.py environment
+    port_env = os.environ.get('PORT')
+    logger.info(f"🔍 DEBUG: PORT environment variable in main.py = '{port_env}' (type: {type(port_env)})")
+    
+    # Check all environment variables that might be relevant
+    relevant_vars = ['PORT', 'FLASK_DEBUG', 'SCRAPER_MODE', 'RAILWAY_CRON_SCHEDULE', 'PYTHONPATH']
+    for var in relevant_vars:
+        value = os.environ.get(var)
+        logger.info(f"🔍 DEBUG: {var} = '{value}'")
+    
+    # Check if any Flask-related modules are imported
+    flask_modules = [module for module in sys.modules.keys() if 'flask' in module.lower()]
+    if flask_modules:
+        logger.warning(f"🚨 DEBUG: Flask modules detected in main.py: {flask_modules}")
+    else:
+        logger.info("🔍 DEBUG: No Flask modules detected in main.py (good)")
+    
     # Set up signal handlers
     setup_signal_handlers()
     

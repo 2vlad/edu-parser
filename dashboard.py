@@ -339,14 +339,51 @@ def internal_error(error):
 
 
 if __name__ == '__main__':
-    # Get port with better error handling
+    # Detailed PORT debugging
+    logger.info("🔍 DEBUG: Starting dashboard.py main execution")
+    logger.info(f"🔍 DEBUG: __file__ = {__file__}")
+    logger.info(f"🔍 DEBUG: sys.argv = {sys.argv}")
+    
+    # Log all environment variables related to PORT
+    port_env = os.environ.get('PORT')
+    logger.info(f"🔍 DEBUG: Raw PORT environment variable = '{port_env}' (type: {type(port_env)})")
+    
+    # Log other relevant env vars
+    flask_debug = os.environ.get('FLASK_DEBUG')
+    scraper_mode = os.environ.get('SCRAPER_MODE')
+    logger.info(f"🔍 DEBUG: FLASK_DEBUG = '{flask_debug}'")
+    logger.info(f"🔍 DEBUG: SCRAPER_MODE = '{scraper_mode}'")
+    
+    # Check if we're being imported vs run directly
+    logger.info(f"🔍 DEBUG: __name__ = '{__name__}'")
+    
+    # Get port with detailed error handling
     try:
-        port = int(os.environ.get('PORT', 8080))
-    except (ValueError, TypeError):
+        if port_env is None:
+            port = 8080
+            logger.info(f"🔍 DEBUG: PORT env var is None, using default: {port}")
+        elif port_env == '':
+            port = 8080
+            logger.info(f"🔍 DEBUG: PORT env var is empty string, using default: {port}")
+        elif port_env == '$PORT':
+            logger.error(f"🚨 DEBUG: PORT env var contains literal '$PORT' - this is the problem!")
+            port = 8080
+            logger.info(f"🔍 DEBUG: Using default port due to $PORT issue: {port}")
+        else:
+            port = int(port_env)
+            logger.info(f"🔍 DEBUG: Successfully parsed PORT = {port}")
+    except (ValueError, TypeError) as e:
         port = 8080
-        logger.warning(f"Invalid PORT value, using default: {port}")
+        logger.error(f"🚨 DEBUG: Failed to parse PORT '{port_env}': {e}")
+        logger.info(f"🔍 DEBUG: Using default port: {port}")
     
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
-    logger.info(f"Starting dashboard on port {port} (debug={debug})")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    logger.info(f"🚀 Starting dashboard on port {port} (debug={debug})")
+    
+    try:
+        app.run(host='0.0.0.0', port=port, debug=debug)
+    except Exception as e:
+        logger.error(f"🚨 DEBUG: Failed to start Flask app: {e}")
+        logger.error(f"🚨 DEBUG: Attempted to use port: {port}")
+        raise
