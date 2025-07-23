@@ -14,13 +14,55 @@ def main():
     print(f"🚀 Starting Edu Parser Cron Job at {datetime.now()}")
     
     try:
-        # Set environment variables to prevent dashboard startup
+        # Set clean environment to prevent any Flask/PORT conflicts
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.dirname(os.path.abspath(__file__))
+        # Remove PORT to prevent Flask from trying to start
+        env.pop('PORT', None)
+        # Ensure we're in scraper mode
+        env['SCRAPER_MODE'] = 'enabled'
         
-        # Run main.py as subprocess to avoid import conflicts
+        # Run scraper directly without importing main.py or dashboard
         result = subprocess.run([
-            sys.executable, 'main.py'
+            sys.executable, '-c', '''
+import sys
+import os
+sys.path.insert(0, os.getcwd())
+
+from scrapers.hse import scrape_hse
+from scrapers.mipt import scrape_mipt
+from scrapers.mephi import scrape_mephi
+from storage.supabase_client import SupabaseStorage
+from config import Config
+from datetime import datetime
+
+print("🚀 Starting cron scraper run...")
+
+config = Config()
+storage = SupabaseStorage(config)
+
+# Get today's date
+today = datetime.now().strftime("%Y-%m-%d")
+
+scrapers = [
+    ("HSE", scrape_hse),
+    ("MIPT", scrape_mipt), 
+    ("MEPhI", scrape_mephi)
+]
+
+for scraper_name, scraper_func in scrapers:
+    print(f"Running {scraper_name} scraper...")
+    try:
+        results = scraper_func(config)
+        for result in results:
+            result["date"] = today
+        storage.save_results(results)
+        print(f"✅ {scraper_name}: Saved {len(results)} results")
+    except Exception as e:
+        print(f"❌ {scraper_name} failed: {e}")
+
+print("✅ Cron scraper run completed")
+'''
         ], 
         cwd=os.path.dirname(os.path.abspath(__file__)),
         env=env,
