@@ -12,7 +12,7 @@ from core.storage import Storage
 from datetime import datetime
 from collections import defaultdict
 
-def main():
+def cleanup_duplicates():
     print("🧹 CLEANING UP DUPLICATE APPLICANT RECORDS")
     print("=" * 50)
     
@@ -89,6 +89,10 @@ def main():
         print(f"  ⚠️ Still {duplicates_remaining} scrapers with duplicates")
     
     print("=" * 50)
+
+def main():
+    """Main function for command line usage."""
+    cleanup_duplicates()
 
 if __name__ == "__main__":
     main()

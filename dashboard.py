@@ -319,6 +319,12 @@ def run_all_scrapers():
                 run_scrapers_func()
                 logger.info("Manual scraper run completed")
                 
+                # Auto-cleanup any duplicates that might have been created
+                logger.info("Cleaning up any duplicate records")
+                from cleanup_applicant_duplicates import cleanup_duplicates
+                cleanup_duplicates()
+                logger.info("Duplicate cleanup completed")
+                
             except Exception as e:
                 logger.error(f"Error in manual scraper run: {e}")
         
