@@ -2,17 +2,26 @@
 
 ## Setting up the Daily Scraper Run at 23:59
 
-Railway supports cron jobs through environment variables. To enable the daily scraper run at 23:59:
+Due to PORT conflicts with the main web service, we recommend using Railway's cron service instead of inline cron commands.
 
-### 1. Add Environment Variable in Railway Dashboard
+### Option 1: Use Manual Run Button (Recommended)
 
-In your Railway project settings, add:
+The dashboard includes a "Run All Scrapers Now" button that:
+- Runs all scrapers manually at any time
+- Overwrites existing data for today
+- Avoids all PORT conflicts
 
-```
-RAILWAY_CRON_SCHEDULE=59 23 * * *
-```
+### Option 2: Railway Cron Service (Advanced)
 
-This runs the scraper every day at 23:59 (11:59 PM) UTC.
+Create a separate Railway service for cron:
+
+1. **Create new Railway service** from the same repository
+2. **Use railway.cron.json** configuration (rename it to railway.json for the cron service)
+3. **Add environment variable** to the cron service:
+   ```
+   RAILWAY_CRON_SCHEDULE=59 23 * * *
+   ```
+4. **The cron service will run scrapers** while the main service runs the dashboard
 
 For Moscow time (UTC+3), use:
 ```

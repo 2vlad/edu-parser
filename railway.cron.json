@@ -4,17 +4,17 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "./start-dashboard.sh",
+    "startCommand": "echo 'Cron service - no web server needed' && sleep infinity",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyMaxRetries": 3,
+    "cronCommand": "python cron-only.py"
   },
   "environments": {
     "production": {
       "variables": {
         "SCRAPER_MODE": "enabled",
         "SUCCESS_THRESHOLD": "0.5",
-        "FLASK_DEBUG": "false",
-        "DASHBOARD_WORKERS": "2"
+        "NO_WEB_SERVER": "true"
       }
     }
   }
