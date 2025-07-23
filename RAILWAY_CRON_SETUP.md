@@ -24,8 +24,9 @@ This runs at 20:59 UTC = 23:59 MSK.
 ### 2. Deploy Configuration
 
 The project already includes:
-- `cron.py` - The cron job runner script
-- `start-scraper.sh` - Shell script to run the scraper
+- `cron.py` - The cron job runner script (uses subprocess to avoid PORT conflicts)
+- `start-scraper.sh` - Shell script to run the scraper (for manual use)
+- `railway.json` - Updated with cronCommand configuration
 
 ### 3. Manual Run Button
 
