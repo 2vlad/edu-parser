@@ -1,18 +1,25 @@
 # Railway Cron Setup Instructions
 
-## Setting up the 6 AM Daily Scraper Run
+## Setting up the Daily Scraper Run at 23:59
 
-Railway supports cron jobs through environment variables. To enable the 6 AM daily scraper run:
+Railway supports cron jobs through environment variables. To enable the daily scraper run at 23:59:
 
 ### 1. Add Environment Variable in Railway Dashboard
 
 In your Railway project settings, add:
 
 ```
-RAILWAY_CRON_SCHEDULE=0 6 * * *
+RAILWAY_CRON_SCHEDULE=59 23 * * *
 ```
 
-This runs the scraper every day at 6:00 AM UTC+3 (Moscow time).
+This runs the scraper every day at 23:59 (11:59 PM) UTC.
+
+For Moscow time (UTC+3), use:
+```
+RAILWAY_CRON_SCHEDULE=59 20 * * *
+```
+
+This runs at 20:59 UTC = 23:59 MSK.
 
 ### 2. Deploy Configuration
 
@@ -20,13 +27,21 @@ The project already includes:
 - `cron.py` - The cron job runner script
 - `start-scraper.sh` - Shell script to run the scraper
 
-### 3. Verify Setup
+### 3. Manual Run Button
+
+The dashboard now includes a "Run All Scrapers Now" button that allows you to:
+- Manually trigger all scrapers at any time
+- Overwrite existing data for today
+- Test the system without waiting for cron
+
+### 4. Verify Setup
 
 After setting the environment variable and deploying:
 
 1. Check Railway logs for "Starting Edu Parser Cron Job"
 2. Monitor the dashboard at https://web-production-cdc5.up.railway.app/
-3. Data should appear after 6 AM each day
+3. Data should appear after 23:59 each day
+4. Use the manual run button for immediate testing
 
 ### Cron Schedule Format
 
@@ -38,14 +53,14 @@ After setting the environment variable and deploying:
 │ │ │ │ ┌───────────── day of week (0 - 7)
 │ │ │ │ │
 │ │ │ │ │
-0 6 * * *
+59 23 * * *
 ```
 
 ### Alternative Schedules
 
-- `0 6,18 * * *` - Run at 6 AM and 6 PM
+- `59 11,23 * * *` - Run at 11:59 AM and 11:59 PM
 - `0 */6 * * *` - Run every 6 hours
-- `0 6 * * 1-5` - Run at 6 AM on weekdays only
+- `59 23 * * 1-5` - Run at 11:59 PM on weekdays only
 
 ### Testing
 

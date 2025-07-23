@@ -248,6 +248,10 @@
                     {{ nav_date }}
                 </a>
             {% endfor %}
+            
+            <button onclick="runAllScrapers()" style="margin-left: 20px; padding: 8px 16px; background: #ff6b35; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                🚀 Run All Scrapers Now
+            </button>
         </div>
         
         <div class="stats-container">
@@ -338,6 +342,48 @@
             setTimeout(() => {
                 window.location.reload();
             }, 30000);
+        }
+        
+        // Run all scrapers function
+        async function runAllScrapers() {
+            if (!confirm('This will run all scrapers and replace today\'s data. Continue?')) {
+                return;
+            }
+            
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '⏳ Running...';
+            
+            try {
+                const response = await fetch('/api/run-all-scrapers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    button.innerHTML = '✅ Started';
+                    alert('Scrapers started successfully!\n\nThe page will refresh automatically in 30 seconds to show new data.');
+                    
+                    // Refresh after 30 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 30000);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (error) {
+                button.innerHTML = '❌ Error';
+                alert(`Error running scrapers: ${error.message}`);
+                
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = '🚀 Run All Scrapers Now';
+                }, 3000);
+            }
         }
     </script>
 </body>

@@ -273,6 +273,58 @@ def api_scrapers():
 
 
 
+@app.route('/api/run-all-scrapers', methods=['POST'])
+@require_access
+def run_all_scrapers():
+    """Run all scrapers manually and overwrite today's data."""
+    try:
+        import threading
+        from datetime import date
+        from main import main as run_scrapers
+        
+        def run_scrapers_background():
+            try:
+                # First, delete today's data
+                today = date.today().isoformat()
+                storage = Storage()
+                
+                # Delete existing records for today
+                existing = storage.client.table('applicant_counts')\
+                    .select('id')\
+                    .eq('date', today)\
+                    .execute()
+                
+                if existing.data:
+                    ids_to_delete = [record['id'] for record in existing.data]
+                    storage.client.table('applicant_counts')\
+                        .delete()\
+                        .in_('id', ids_to_delete)\
+                        .execute()
+                    logger.info(f"Deleted {len(ids_to_delete)} existing records for {today}")
+                
+                # Run scrapers
+                logger.info("Starting manual scraper run")
+                run_scrapers()
+                logger.info("Manual scraper run completed")
+                
+            except Exception as e:
+                logger.error(f"Error in manual scraper run: {e}")
+        
+        # Run in background
+        thread = threading.Thread(target=run_scrapers_background)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'Scrapers started. Data will be updated in a few minutes.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Run all scrapers error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
