@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "echo 'Starting web-only service' && python dashboard.py",
+    "startCommand": "echo '🚀🚀🚀 WEB-ONLY SERVICE v2.1.3-webport-rename 🚀🚀🚀' && python dashboard.py",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   },
@@ -15,7 +15,8 @@
         "SUCCESS_THRESHOLD": "0.5",
         "FLASK_DEBUG": "false",
         "DASHBOARD_WORKERS": "2",
-        "CACHE_BUSTER": "2025-07-23-36-scrapers"
+        "CACHE_BUSTER": "2025-07-23-36-scrapers",
+        "WEB_PORT": "8080"
       }
     }
   }

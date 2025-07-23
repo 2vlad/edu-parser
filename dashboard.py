@@ -364,9 +364,11 @@ if __name__ == '__main__':
     except:
         logger.info("🚀 DASHBOARD VERSION: unknown")
     
-    # Log all environment variables related to PORT
-    port_env = os.environ.get('PORT')
-    logger.info(f"🔍 DEBUG: Raw PORT environment variable = '{port_env}' (type: {type(port_env)})")
+    # Log all environment variables related to WEB_PORT (renamed from PORT to avoid Railway conflicts)
+    web_port_env = os.environ.get('WEB_PORT')
+    port_env = os.environ.get('PORT')  # Keep for debugging Railway issue
+    logger.info(f"🔍 DEBUG: WEB_PORT environment variable = '{web_port_env}' (type: {type(web_port_env)})")
+    logger.info(f"🔍 DEBUG: PORT environment variable = '{port_env}' (type: {type(port_env)})")
     
     # Log other relevant env vars
     flask_debug = os.environ.get('FLASK_DEBUG')
@@ -379,25 +381,30 @@ if __name__ == '__main__':
     # Check if we're being imported vs run directly
     logger.info(f"🔍 DEBUG: __name__ = '{__name__}'")
     
-    # **CRITICAL FIX:** Handle PORT parsing very carefully
+    # **CRITICAL FIX:** Use WEB_PORT instead of PORT to avoid Railway conflicts
     try:
-        # If PORT is the literal string '$PORT', Railway has a bug
-        if port_env == '$PORT' or port_env == "'$PORT'" or port_env == '"$PORT"':
-            logger.error(f"🚨 CRITICAL: PORT env var contains literal '$PORT' string: '{port_env}'")
-            logger.error(f"🚨 CRITICAL: This is a Railway environment variable substitution bug!")
-            port = 8080
-            logger.info(f"🔧 FIXED: Using hardcoded port 8080 to bypass Railway bug")
-        elif port_env is None or port_env == '':
-            port = 8080
-            logger.info(f"🔍 DEBUG: PORT env var is None/empty, using default: {port}")
+        # First try WEB_PORT (our custom variable)
+        if web_port_env and web_port_env.isdigit():
+            port = int(web_port_env)
+            logger.info(f"🔧 SUCCESS: Using WEB_PORT = {port}")
+        # Then try PORT but with careful handling
+        elif port_env and port_env != '$PORT' and port_env != "'$PORT'" and port_env != '"$PORT"':
+            try:
+                port = int(port_env)
+                logger.info(f"🔍 DEBUG: Successfully parsed PORT = {port}")
+            except (ValueError, TypeError):
+                port = 8080
+                logger.info(f"🔧 FALLBACK: PORT parse failed, using default: {port}")
         else:
-            # Try to parse as integer
-            port = int(port_env)
-            logger.info(f"🔍 DEBUG: Successfully parsed PORT = {port}")
-    except (ValueError, TypeError) as e:
+            port = 8080
+            if port_env == '$PORT' or port_env == "'$PORT'" or port_env == '"$PORT"':
+                logger.error(f"🚨 CRITICAL: PORT env var contains literal '$PORT' string: '{port_env}'")
+                logger.error(f"🚨 CRITICAL: This confirms Railway environment variable substitution bug!")
+            logger.info(f"🔧 FALLBACK: Using default port: {port}")
+    except Exception as e:
         port = 8080
-        logger.error(f"🚨 DEBUG: Failed to parse PORT '{port_env}': {e}")
-        logger.info(f"🔧 FIXED: Using default port: {port}")
+        logger.error(f"🚨 ERROR: Port determination failed: {e}")
+        logger.info(f"🔧 EMERGENCY: Using hardcoded port: {port}")
     
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
