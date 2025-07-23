@@ -256,6 +256,10 @@
             <button onclick="exportCSV()" style="margin-left: 10px; padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
                 📊 Export CSV
             </button>
+            
+            <button onclick="syncToSheets()" style="margin-left: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                📈 Sync to Sheets
+            </button>
         </div>
         
         <div class="stats-container">
@@ -425,6 +429,53 @@
                 setTimeout(() => {
                     button.disabled = false;
                     button.innerHTML = '📊 Export CSV';
+                }, 3000);
+            }
+        }
+        
+        // Sync to Google Sheets function
+        async function syncToSheets() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '⏳ Syncing...';
+            
+            try {
+                // Get current date from URL or use today
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentDate = urlParams.get('date') || '{{ date.isoformat() }}';
+                
+                const response = await fetch('/api/sync-to-sheets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date: currentDate
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    button.innerHTML = '✅ Started';
+                    alert(`Google Sheets sync started for ${currentDate}!\n\nCheck the logs for results. The sync runs in background.`);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = '📈 Sync to Sheets';
+                }, 3000);
+                
+            } catch (error) {
+                button.innerHTML = '❌ Error';
+                alert(`Error syncing to Google Sheets: ${error.message}`);
+                
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = '📈 Sync to Sheets';
                 }, 3000);
             }
         }

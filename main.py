@@ -272,6 +272,19 @@ def main():
             logger.error("Marking this run as failed")
             sys.exit(1)
         
+        # Sync to Google Sheets if configured
+        try:
+            from core.google_sheets import sync_to_sheets
+            logger.info("Attempting to sync data to Google Sheets...")
+            
+            if sync_to_sheets():
+                logger.info("✅ Successfully synced data to Google Sheets")
+            else:
+                logger.warning("⚠️ Google Sheets sync skipped (not configured or failed)")
+        except Exception as e:
+            logger.error(f"Google Sheets sync error: {e}")
+            # Don't fail the entire run if sheets sync fails
+        
         logger.info("=" * 60)
         logger.info("SCRAPING SESSION COMPLETED SUCCESSFULLY")
         logger.info("=" * 60)

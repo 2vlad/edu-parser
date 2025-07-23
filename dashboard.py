@@ -327,6 +327,19 @@ def run_all_scrapers():
                 cleanup_duplicates()
                 logger.info("Duplicate cleanup completed")
                 
+                # Sync to Google Sheets if configured
+                try:
+                    from core.google_sheets import sync_to_sheets
+                    logger.info("Syncing data to Google Sheets...")
+                    
+                    if sync_to_sheets():
+                        logger.info("✅ Successfully synced data to Google Sheets")
+                    else:
+                        logger.warning("⚠️ Google Sheets sync skipped (not configured)")
+                except Exception as e:
+                    logger.error(f"Google Sheets sync error: {e}")
+                    # Don't fail the manual run if sheets sync fails
+                
             except Exception as e:
                 logger.error(f"Error in manual scraper run: {e}")
         
@@ -482,6 +495,47 @@ def export_csv():
         
     except Exception as e:
         logger.error(f"CSV export error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/sync-to-sheets', methods=['POST'])
+@require_access
+def sync_to_sheets():
+    """Manually sync data to Google Sheets."""
+    try:
+        import threading
+        from datetime import date
+        
+        def sync_background():
+            try:
+                # Get date parameter or use today
+                date_param = request.json.get('date') if request.json else None
+                target_date = date_param or date.today().isoformat()
+                
+                logger.info(f"Starting manual Google Sheets sync for {target_date}")
+                
+                from core.google_sheets import sync_to_sheets as sync_func
+                
+                if sync_func(target_date):
+                    logger.info(f"✅ Successfully synced {target_date} to Google Sheets")
+                else:
+                    logger.warning(f"⚠️ Google Sheets sync skipped for {target_date} (not configured or no data)")
+                
+            except Exception as e:
+                logger.error(f"Error in manual Google Sheets sync: {e}")
+        
+        # Run sync in background
+        thread = threading.Thread(target=sync_background)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'Google Sheets sync started. Check logs for results.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Sync to sheets error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
