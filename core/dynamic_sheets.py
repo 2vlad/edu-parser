@@ -134,13 +134,81 @@ class DynamicSheetsManager:
                 logger.error("No data found in sheet")
                 return None
             
-            # Static columns: вуз (A), программа (B), URL (C)
-            # New date columns should be inserted at position D (index 3)
-            # This pushes existing date columns to the right
-            static_columns = 3
+            # Check if column already exists
+            existing_column_index = self.find_date_column(target_date)
+            if existing_column_index is not None:
+                logger.info(f"Date column '{target_date}' already exists at index {existing_column_index}")
+                return existing_column_index
+            
+            # Parse date to determine correct insertion position
+            # Format: "DD месяц" -> need to convert to comparable date
+            months_map = {
+                'янв': 1, 'фев': 2, 'мар': 3, 'апр': 4, 'май': 5, 'июн': 6,
+                'июл': 7, 'авг': 8, 'сен': 9, 'окт': 10, 'ноя': 11, 'дек': 12
+            }
+            
+            # Extract day and month from target date
+            parts = target_date.strip().split()
+            if len(parts) != 2:
+                logger.error(f"Invalid date format: {target_date}")
+                return None
+                
+            try:
+                day = int(parts[0])
+                month_name = parts[1].lower()[:3]  # Take first 3 chars
+                month = months_map.get(month_name, 0)
+                
+                if month == 0:
+                    logger.error(f"Unknown month: {parts[1]}")
+                    return None
+                    
+                # Assume current year for comparison
+                from datetime import datetime
+                current_year = datetime.now().year
+                target_date_obj = datetime(current_year, month, day)
+                
+            except (ValueError, KeyError) as e:
+                logger.error(f"Error parsing date '{target_date}': {e}")
+                return None
+            
+            # Find correct insertion position based on chronological order
+            header_row = data[0] if data else []
+            static_columns = 3  # вуз (A), программа (B), URL (C)
             insert_column_index = static_columns
             
-            # First, insert a new column at the desired position
+            # Check existing date columns to find correct position
+            for i in range(static_columns, len(header_row)):
+                col_header = header_row[i].strip()
+                if not col_header:  # Skip empty columns
+                    continue
+                    
+                # Try to parse existing column date
+                col_parts = col_header.split()
+                if len(col_parts) == 2:
+                    try:
+                        col_day = int(col_parts[0])
+                        col_month_name = col_parts[1].lower()[:3]
+                        col_month = months_map.get(col_month_name, 0)
+                        
+                        if col_month != 0:
+                            col_date_obj = datetime(current_year, col_month, col_day)
+                            
+                            # If target date is newer (more recent), insert before this column
+                            if target_date_obj > col_date_obj:
+                                insert_column_index = i
+                                break
+                    except (ValueError, KeyError):
+                        continue
+            
+            # If we went through all columns and didn't find a place, append at the end of date columns
+            # But we need to count only non-empty date columns
+            if insert_column_index == static_columns:
+                # Count actual date columns (non-empty headers after static columns)
+                for i in range(static_columns, len(header_row)):
+                    if header_row[i].strip():
+                        insert_column_index = i + 1
+            
+            # Insert a new column at the calculated position
             requests = [
                 {
                     'insertDimension': {
@@ -183,6 +251,134 @@ class DynamicSheetsManager:
         except Exception as e:
             logger.error(f"Failed to add date column: {e}")
             return None
+    
+    def cleanup_and_reorganize_columns(self) -> bool:
+        """
+        Clean up test columns and reorganize date columns in proper reverse chronological order.
+        
+        Returns:
+            bool: True if cleanup was successful
+        """
+        if not self.is_available():
+            return False
+            
+        try:
+            # Get current sheet data
+            data = self.get_sheet_data()
+            if not data or len(data) == 0:
+                logger.error("No data found in sheet")
+                return False
+                
+            header_row = data[0]
+            static_columns = 3  # вуз, программа, URL
+            
+            # Parse all date columns
+            months_map = {
+                'янв': 1, 'фев': 2, 'мар': 3, 'апр': 4, 'май': 5, 'июн': 6,
+                'июл': 7, 'авг': 8, 'сен': 9, 'окт': 10, 'ноя': 11, 'дек': 12
+            }
+            
+            date_columns = []
+            for i in range(static_columns, len(header_row)):
+                col_header = header_row[i].strip()
+                if not col_header:
+                    continue
+                    
+                parts = col_header.split()
+                if len(parts) == 2:
+                    try:
+                        day = int(parts[0])
+                        month_name = parts[1].lower()[:3]
+                        month = months_map.get(month_name, 0)
+                        
+                        if month != 0:
+                            from datetime import datetime
+                            current_year = datetime.now().year
+                            date_obj = datetime(current_year, month, day)
+                            date_columns.append({
+                                'index': i,
+                                'header': col_header,
+                                'date': date_obj,
+                                'data': [row[i] if i < len(row) else '' for row in data[1:]]
+                            })
+                    except (ValueError, KeyError):
+                        continue
+            
+            if not date_columns:
+                logger.info("No date columns found to reorganize")
+                return True
+                
+            # Sort date columns in reverse chronological order (newest first)
+            date_columns.sort(key=lambda x: x['date'], reverse=True)
+            
+            # Delete all existing date columns (starting from the rightmost)
+            delete_requests = []
+            for col in sorted(date_columns, key=lambda x: x['index'], reverse=True):
+                delete_requests.append({
+                    'deleteDimension': {
+                        'range': {
+                            'sheetId': 0,
+                            'dimension': 'COLUMNS',
+                            'startIndex': col['index'],
+                            'endIndex': col['index'] + 1
+                        }
+                    }
+                })
+            
+            if delete_requests:
+                self.service.spreadsheets().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={'requests': delete_requests}
+                ).execute()
+                
+            # Re-add columns in correct order
+            for idx, col in enumerate(date_columns):
+                column_index = static_columns + idx
+                
+                # Insert column
+                self.service.spreadsheets().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={'requests': [{
+                        'insertDimension': {
+                            'range': {
+                                'sheetId': 0,
+                                'dimension': 'COLUMNS',
+                                'startIndex': column_index,
+                                'endIndex': column_index + 1
+                            }
+                        }
+                    }]}
+                ).execute()
+                
+                # Add header
+                column_letter = chr(ord('A') + column_index)
+                self.service.spreadsheets().values().update(
+                    spreadsheetId=self.spreadsheet_id,
+                    range=f"{self.master_sheet_name}!{column_letter}1",
+                    valueInputOption='RAW',
+                    body={'values': [[col['header']]]}
+                ).execute()
+                
+                # Add data if exists
+                if col['data']:
+                    data_range = f"{self.master_sheet_name}!{column_letter}2:{column_letter}{len(col['data']) + 1}"
+                    values = [[val] for val in col['data']]
+                    self.service.spreadsheets().values().update(
+                        spreadsheetId=self.spreadsheet_id,
+                        range=data_range,
+                        valueInputOption='RAW',
+                        body={'values': values}
+                    ).execute()
+                
+                # Format header
+                self._format_date_header(column_index)
+                
+            logger.info(f"Successfully reorganized {len(date_columns)} date columns in reverse chronological order")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to cleanup and reorganize columns: {e}")
+            return False
     
     def _format_date_header(self, column_index: int) -> None:
         """Format the date header cell."""
@@ -248,9 +444,111 @@ class DynamicSheetsManager:
         
         return mapping
     
+    def add_missing_programs(self, target_date: Optional[str] = None) -> int:
+        """
+        Add missing programs to the sheet based on database data.
+        
+        Args:
+            target_date: Date in YYYY-MM-DD format to check for programs. Defaults to today.
+            
+        Returns:
+            int: Number of programs added.
+        """
+        if not self.is_available():
+            return 0
+        
+        try:
+            # Use today if no date specified
+            if target_date is None:
+                target_date = date.today().isoformat()
+            
+            # Get data from database
+            storage = Storage()
+            result = storage.client.table('applicant_counts')\
+                .select('*')\
+                .eq('date', target_date)\
+                .eq('status', 'success')\
+                .order('name')\
+                .execute()
+            
+            if not result.data:
+                logger.warning(f"No data found for date {target_date}")
+                return 0
+            
+            # Get current programs mapping
+            programs_mapping = self.get_programs_mapping()
+            
+            # Find missing programs
+            missing_programs = []
+            
+            for record in result.data:
+                scraper_id = record['scraper_id']
+                if scraper_id.startswith('hse_'):
+                    university = 'НИУ ВШЭ'
+                elif scraper_id.startswith('mipt_'):
+                    university = 'МФТИ'
+                elif scraper_id.startswith('mephi_'):
+                    university = 'МИФИ'
+                else:
+                    university = 'Unknown'
+                
+                program_name = record.get('name', record['scraper_id'])
+                
+                # Clean program name
+                if program_name.startswith('HSE - '):
+                    program_name = program_name[6:]
+                elif program_name.startswith('МФТИ - '):
+                    program_name = program_name[7:]
+                elif program_name.startswith('НИЯУ МИФИ - '):
+                    program_name = program_name[12:]
+                
+                program_key = f"{university} - {program_name}"
+                
+                if program_key not in programs_mapping:
+                    missing_programs.append({
+                        'university': university,
+                        'program': program_name,
+                        'url': record.get('url', '')
+                    })
+            
+            if not missing_programs:
+                logger.info("No missing programs found")
+                return 0
+            
+            # Get current sheet data to find next row
+            data = self.get_sheet_data()
+            next_row = len(data) + 1 if data else 2  # Start from row 2 (after header)
+            
+            # Prepare data for batch append
+            values_to_append = []
+            for program in missing_programs:
+                values_to_append.append([
+                    program['university'],
+                    program['program'],
+                    program['url']
+                ])
+            
+            # Append new programs to the sheet
+            range_name = f"{self.master_sheet_name}!A{next_row}:C"
+            
+            self.service.spreadsheets().values().append(
+                spreadsheetId=self.spreadsheet_id,
+                range=range_name,
+                valueInputOption='RAW',
+                body={'values': values_to_append}
+            ).execute()
+            
+            logger.info(f"Added {len(missing_programs)} missing programs to sheet")
+            return len(missing_programs)
+            
+        except Exception as e:
+            logger.error(f"Failed to add missing programs: {e}")
+            return 0
+
     def update_daily_data(self, target_date: Optional[str] = None) -> bool:
         """
         Update the sheet with daily data for a specific date.
+        First adds any missing programs, then updates data.
         
         Args:
             target_date: Date in YYYY-MM-DD format. Defaults to today.
@@ -275,6 +573,11 @@ class DynamicSheetsManager:
             
             logger.info(f"Updating dynamic sheet for {formatted_date} ({target_date})")
             
+            # First, add any missing programs
+            added_programs = self.add_missing_programs(target_date)
+            if added_programs > 0:
+                logger.info(f"Added {added_programs} missing programs before data update")
+            
             # Check if date column exists, if not create it
             column_index = self.find_date_column(formatted_date)
             if column_index is None:
@@ -296,7 +599,7 @@ class DynamicSheetsManager:
                 logger.warning(f"No data found for date {target_date}")
                 return False
             
-            # Get programs mapping from sheet
+            # Get updated programs mapping (after adding missing programs)
             programs_mapping = self.get_programs_mapping()
             
             # Prepare updates
@@ -330,7 +633,7 @@ class DynamicSheetsManager:
                 # Find row for this program
                 row_index = programs_mapping.get(program_key)
                 if row_index is None:
-                    logger.warning(f"Program not found in sheet: {program_key}")
+                    logger.warning(f"Program still not found in sheet after adding missing programs: {program_key}")
                     continue
                 
                 # Convert column index to letter
