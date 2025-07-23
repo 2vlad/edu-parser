@@ -116,7 +116,8 @@ class DynamicSheetsManager:
     
     def add_date_column(self, target_date: str) -> Optional[int]:
         """
-        Add a new date column to the sheet.
+        Add a new date column to the sheet in reverse chronological order.
+        New columns are inserted right after static columns (before existing date columns).
         
         Args:
             target_date: Date in format 'DD месяц' (e.g., '23 июль')
@@ -133,16 +134,35 @@ class DynamicSheetsManager:
                 logger.error("No data found in sheet")
                 return None
             
-            header_row = data[0] if data else []
-            
-            # Find the next available column after static columns
             # Static columns: вуз (A), программа (B), URL (C)
-            # Date columns start from D (index 3)
+            # New date columns should be inserted at position D (index 3)
+            # This pushes existing date columns to the right
             static_columns = 3
-            next_column_index = max(static_columns, len(header_row))
+            insert_column_index = static_columns
+            
+            # First, insert a new column at the desired position
+            requests = [
+                {
+                    'insertDimension': {
+                        'range': {
+                            'sheetId': 0,  # Assuming first sheet
+                            'dimension': 'COLUMNS',
+                            'startIndex': insert_column_index,
+                            'endIndex': insert_column_index + 1
+                        },
+                        'inheritFromBefore': False
+                    }
+                }
+            ]
+            
+            # Execute the column insertion
+            self.service.spreadsheets().batchUpdate(
+                spreadsheetId=self.spreadsheet_id,
+                body={'requests': requests}
+            ).execute()
             
             # Convert column index to letter (A, B, C, ...)
-            column_letter = chr(ord('A') + next_column_index)
+            column_letter = chr(ord('A') + insert_column_index)
             
             # Add header for the new date column
             range_name = f"{self.master_sheet_name}!{column_letter}1"
@@ -155,10 +175,10 @@ class DynamicSheetsManager:
             ).execute()
             
             # Format the header
-            self._format_date_header(next_column_index)
+            self._format_date_header(insert_column_index)
             
-            logger.info(f"Added date column '{target_date}' at index {next_column_index}")
-            return next_column_index
+            logger.info(f"Added date column '{target_date}' at index {insert_column_index} (reverse chronological order)")
+            return insert_column_index
             
         except Exception as e:
             logger.error(f"Failed to add date column: {e}")
