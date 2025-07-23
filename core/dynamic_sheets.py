@@ -545,10 +545,45 @@ class DynamicSheetsManager:
             logger.error(f"Failed to add missing programs: {e}")
             return 0
 
+    def clear_column_data(self, column_index: int) -> bool:
+        """
+        Clear all data in a specific column except the header.
+        
+        Args:
+            column_index: Index of the column to clear
+            
+        Returns:
+            bool: True if successful
+        """
+        try:
+            # Get current sheet data to determine number of rows
+            data = self.get_sheet_data()
+            if not data or len(data) <= 1:
+                return True
+                
+            num_rows = len(data)
+            column_letter = chr(ord('A') + column_index)
+            
+            # Clear data from row 2 to the last row
+            clear_range = f"{self.master_sheet_name}!{column_letter}2:{column_letter}{num_rows}"
+            
+            # Clear the range
+            self.service.spreadsheets().values().clear(
+                spreadsheetId=self.spreadsheet_id,
+                range=clear_range
+            ).execute()
+            
+            logger.info(f"Cleared data in column {column_letter} (index {column_index})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to clear column data: {e}")
+            return False
+
     def update_daily_data(self, target_date: Optional[str] = None) -> bool:
         """
         Update the sheet with daily data for a specific date.
-        First adds any missing programs, then updates data.
+        Only updates the column for the specified date, leaving other dates untouched.
         
         Args:
             target_date: Date in YYYY-MM-DD format. Defaults to today.
@@ -573,10 +608,12 @@ class DynamicSheetsManager:
             
             logger.info(f"Updating dynamic sheet for {formatted_date} ({target_date})")
             
-            # First, add any missing programs
-            added_programs = self.add_missing_programs(target_date)
-            if added_programs > 0:
-                logger.info(f"Added {added_programs} missing programs before data update")
+            # First, add any missing programs (only if we're updating today's data)
+            today = date.today().isoformat()
+            if target_date == today:
+                added_programs = self.add_missing_programs(target_date)
+                if added_programs > 0:
+                    logger.info(f"Added {added_programs} missing programs before data update")
             
             # Check if date column exists, if not create it
             column_index = self.find_date_column(formatted_date)
@@ -585,6 +622,12 @@ class DynamicSheetsManager:
                 if column_index is None:
                     logger.error("Failed to create date column")
                     return False
+            
+            # IMPORTANT: Clear only the specific column we're updating
+            # This preserves manual data in other date columns
+            logger.info(f"Clearing existing data in column for {formatted_date}")
+            if not self.clear_column_data(column_index):
+                logger.warning("Failed to clear column data, continuing anyway")
             
             # Get data from database
             storage = Storage()
@@ -602,7 +645,7 @@ class DynamicSheetsManager:
             # Get updated programs mapping (after adding missing programs)
             programs_mapping = self.get_programs_mapping()
             
-            # Prepare updates
+            # Prepare updates ONLY for the specific column
             updates = []
             updated_count = 0
             
@@ -657,7 +700,7 @@ class DynamicSheetsManager:
                     }
                 ).execute()
                 
-                logger.info(f"Successfully updated {updated_count} programs for {formatted_date}")
+                logger.info(f"Successfully updated {updated_count} programs for {formatted_date} (column {column_index})")
                 return True
             else:
                 logger.warning("No programs to update")
