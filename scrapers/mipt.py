@@ -190,6 +190,7 @@ def scrape_mipt_program(program_name: str, url: str, config: Dict[str, Any] = No
         if html_content is None:
             return {
                 'scraper_id': scraper_id,
+                'name': f'МФТИ - {program_name}',
                 'program_name': program_name,
                 'university': 'MIPT',
                 'status': 'error',
@@ -203,6 +204,7 @@ def scrape_mipt_program(program_name: str, url: str, config: Dict[str, Any] = No
         if count is None:
             return {
                 'scraper_id': scraper_id,
+                'name': f'МФТИ - {program_name}',
                 'program_name': program_name,
                 'university': 'MIPT',
                 'status': 'error',
@@ -219,6 +221,7 @@ def scrape_mipt_program(program_name: str, url: str, config: Dict[str, Any] = No
         
         result = {
             'scraper_id': scraper_id,
+            'name': f'МФТИ - {program_name}',
             'program_name': program_name,
             'university': 'MIPT',
             'status': 'success',
@@ -240,6 +243,7 @@ def scrape_mipt_program(program_name: str, url: str, config: Dict[str, Any] = No
         
         return {
             'scraper_id': scraper_id,
+            'name': f'МФТИ - {program_name}',
             'program_name': program_name,
             'university': 'MIPT',
             'status': 'error',

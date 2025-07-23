@@ -17,12 +17,12 @@ logger = get_logger(__name__)
 
 # MEPhI program URLs and names
 MEPHI_PROGRAMS = [
-    ('Машинное обучение и анализ данных', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12843/original/no'),
-    ('Информационные системы и технологии', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12768/original/no'),
+    ('Машинное обучение', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12843/original/no'),
+    ('Науки о данных', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12842/original/no'),
     ('Кибербезопасность', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12847/original/no'),
-    ('Математическое моделирование', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12816/original/no'),
-    ('Прикладная математика и информатика', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12764/original/no'),
-    ('Ядерные физика и технологии', 'https://org.mephi.ru/pupil-rating/get-rating/entity/13584/original/no')
+    ('Безопасность информационных систем', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12846/original/no'),
+    ('Разработка программного обеспечения', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12844/original/no'),
+    ('Разработка веб приложений', 'https://org.mephi.ru/pupil-rating/get-rating/entity/12845/original/no')
 ]
 
 
@@ -37,12 +37,12 @@ def transliterate_program_name(program_name: str) -> str:
         Transliterated English name
     """
     clean_name = (program_name
-                 .replace('Машинное обучение и анализ данных', 'machine_learning_data_analysis')
-                 .replace('Информационные системы и технологии', 'information_systems_technologies') 
+                 .replace('Машинное обучение', 'machine_learning')
+                 .replace('Науки о данных', 'data_science')
                  .replace('Кибербезопасность', 'cybersecurity')
-                 .replace('Математическое моделирование', 'mathematical_modeling')
-                 .replace('Прикладная математика и информатика', 'applied_mathematics_informatics')
-                 .replace('Ядерные физика и технологии', 'nuclear_physics_technologies')
+                 .replace('Безопасность информационных систем', 'information_systems_security')
+                 .replace('Разработка программного обеспечения', 'software_development')
+                 .replace('Разработка веб приложений', 'web_development')
                  .replace(' ', '_')
                  .replace('-', '_')
                  .lower())
@@ -196,6 +196,7 @@ def scrape_mephi_program(program_name: str, url: str, config: Dict[str, Any] = N
         if html_content is None:
             return {
                 'scraper_id': scraper_id,
+                'name': f'НИЯУ МИФИ - {program_name}',
                 'program_name': program_name,
                 'university': 'MEPhI',
                 'status': 'error',
@@ -209,6 +210,7 @@ def scrape_mephi_program(program_name: str, url: str, config: Dict[str, Any] = N
         if count is None:
             return {
                 'scraper_id': scraper_id,
+                'name': f'НИЯУ МИФИ - {program_name}',
                 'program_name': program_name,
                 'university': 'MEPhI',
                 'status': 'error',
@@ -221,6 +223,7 @@ def scrape_mephi_program(program_name: str, url: str, config: Dict[str, Any] = N
         
         result = {
             'scraper_id': scraper_id,
+            'name': f'НИЯУ МИФИ - {program_name}',
             'program_name': program_name,
             'university': 'MEPhI',
             'status': 'success',
@@ -242,6 +245,7 @@ def scrape_mephi_program(program_name: str, url: str, config: Dict[str, Any] = N
         
         return {
             'scraper_id': scraper_id,
+            'name': f'НИЯУ МИФИ - {program_name}',
             'program_name': program_name,
             'university': 'MEPhI',
             'status': 'error',

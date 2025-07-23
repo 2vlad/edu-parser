@@ -222,6 +222,7 @@ def scrape_hse_program(program_name: str, config: Dict[str, Any] = None) -> Dict
         if df is None:
             return {
                 'scraper_id': scraper_id,
+                'name': f'HSE - {program_name}',
                 'program_name': program_name,
                 'university': 'HSE',
                 'status': 'error',
@@ -235,6 +236,7 @@ def scrape_hse_program(program_name: str, config: Dict[str, Any] = None) -> Dict
         if not count_column:
             return {
                 'scraper_id': scraper_id,
+                'name': f'HSE - {program_name}',
                 'program_name': program_name,
                 'university': 'HSE',
                 'status': 'error',
@@ -248,6 +250,7 @@ def scrape_hse_program(program_name: str, config: Dict[str, Any] = None) -> Dict
         if not program_data:
             return {
                 'scraper_id': scraper_id,
+                'name': f'HSE - {program_name}',
                 'program_name': program_name,
                 'university': 'HSE',
                 'status': 'error',
@@ -271,6 +274,7 @@ def scrape_hse_program(program_name: str, config: Dict[str, Any] = None) -> Dict
         
         result = {
             'scraper_id': scraper_id,
+            'name': f'HSE - {program_name}',
             'program_name': program_name,
             'university': 'HSE',
             'status': 'success',
@@ -294,6 +298,7 @@ def scrape_hse_program(program_name: str, config: Dict[str, Any] = None) -> Dict
         
         return {
             'scraper_id': scraper_id,
+            'name': f'HSE - {program_name}',
             'program_name': program_name,
             'university': 'HSE',
             'status': 'error',

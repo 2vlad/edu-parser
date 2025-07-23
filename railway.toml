@@ -1,0 +1,16 @@
+[deploy]
+numReplicas = 1
+
+[[services]]
+name = "dashboard"
+startCommand = "./start-dashboard.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "scraper"
+startCommand = "./start-scraper.sh"
+restartPolicyType = "NEVER"
+cronSchedule = "0 6 * * *"
