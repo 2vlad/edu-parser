@@ -6,7 +6,9 @@
   "deploy": {
     "startCommand": "python dashboard.py",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyMaxRetries": 3,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 30
   },
   "environments": {
     "production": {
