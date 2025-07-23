@@ -167,11 +167,21 @@ def health():
             except:
                 db_healthy = False
             
+            # Read version info
+            try:
+                with open('VERSION', 'r') as f:
+                    version = f.read().strip()
+            except:
+                version = 'unknown'
+            
             return jsonify({
                 'status': 'healthy' if db_healthy else 'degraded',
+                'version': version,
                 'last_run': last_run,
                 'database': 'connected' if db_healthy else 'error',
-                'timestamp': datetime.now().isoformat()
+                'timestamp': datetime.now().isoformat(),
+                'cache_buster': os.environ.get('CACHE_BUSTER', 'none'),
+                'git_commit': os.environ.get('RAILWAY_GIT_COMMIT_SHA', 'unknown')[:8] if os.environ.get('RAILWAY_GIT_COMMIT_SHA') else 'unknown'
             })
         else:
             return jsonify({

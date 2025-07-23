@@ -42,6 +42,21 @@ export FLASK_DEBUG=${FLASK_DEBUG:-false}
 
 echo "🔍 DEBUG: Final PORT value: $PORT"
 echo "🔍 DEBUG: Final FLASK_DEBUG value: $FLASK_DEBUG"
+
+# Display version information prominently
+echo ""
+echo "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀"
+echo "🚀                    EDU PARSER DEPLOYMENT                     🚀"
+if [ -f VERSION ]; then
+    VERSION=$(cat VERSION)
+    echo "🚀                    VERSION: $VERSION                     🚀"
+else
+    echo "🚀                    VERSION: unknown                        🚀"
+fi
+echo "🚀              CACHE_BUSTER: ${CACHE_BUSTER:-none}             🚀"
+echo "🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀🚀"
+echo ""
+
 echo "Starting Edu Parser Dashboard..."
 echo "Port: $PORT"
 echo "Debug mode: $FLASK_DEBUG"

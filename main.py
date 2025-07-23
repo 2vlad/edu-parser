@@ -201,10 +201,20 @@ def main():
     # Set up signal handlers
     setup_signal_handlers()
     
-    logger.info("=" * 60)
-    logger.info("STARTING EDU-PARSER SCRAPING SESSION")
-    logger.info(f"Timestamp: {datetime.now().isoformat()}")
-    logger.info("=" * 60)
+    # Read version for logging
+    try:
+        with open('VERSION', 'r') as f:
+            version = f.read().strip()
+    except:
+        version = 'unknown'
+    
+    logger.info("=" * 80)
+    logger.info("🚀 STARTING EDU-PARSER SCRAPING SESSION 🚀")
+    logger.info(f"🚀 VERSION: {version}")
+    logger.info(f"🚀 TIMESTAMP: {datetime.now().isoformat()}")
+    logger.info(f"🚀 CACHE_BUSTER: {os.environ.get('CACHE_BUSTER', 'none')}")
+    logger.info(f"🚀 EXPECTED SCRAPERS: 36 (23 HSE + 7 MIPT + 6 MEPhI)")
+    logger.info("=" * 80)
     
     session_start_time = time.time()
     
