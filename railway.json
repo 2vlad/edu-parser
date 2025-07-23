@@ -17,8 +17,9 @@
         "SUCCESS_THRESHOLD": "0.5",
         "FLASK_DEBUG": "false",
         "DASHBOARD_WORKERS": "2",
-        "CACHE_BUSTER": "2025-07-23-36-scrapers",
-        "WEB_PORT": "8080"
+        "CACHE_BUSTER": "2025-07-23-fresh-rebuild",
+        "WEB_PORT": "8080",
+        "FORCE_REBUILD": "2025-07-23-13-05"
       }
     }
   }

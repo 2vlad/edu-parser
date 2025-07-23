@@ -1,0 +1,6 @@
+[environment]
+# Railway environment file for CLI
+production = "edu-parser"
+
+[service]
+name = "web-fresh"
