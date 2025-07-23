@@ -104,7 +104,7 @@ def parse_mipt_html(html_content: str) -> Optional[int]:
         # Find ALL data rows across different classes that MIPT uses
         all_data_elements = []
         
-        for row_class in ['R0', 'R11', 'R13', 'R18', 'R19']:
+        for row_class in ['R0', 'R11', 'R13', 'R18', 'R19', 'R45']:
             elements = soup.find_all('tr', class_=row_class)
             if elements:
                 # Check if these are data rows (first cell should be numeric)
