@@ -506,10 +506,12 @@ def sync_to_sheets():
         import threading
         from datetime import date
         
+        # Get date parameter in main thread (before background execution)
+        date_param = request.json.get('date') if request.json else None
+        
         def sync_background():
             try:
-                # Get date parameter or use today
-                date_param = request.json.get('date') if request.json else None
+                # Get date parameter or use today (passed from main thread)
                 target_date = date_param or date.today().isoformat()
                 
                 logger.info(f"Starting manual dynamic Google Sheets update for {target_date}")
