@@ -101,34 +101,38 @@ def parse_mipt_html(html_content: str) -> Optional[int]:
         
         soup = BeautifulSoup(html_content, 'html.parser')
         
-        # Try different row classes that MIPT uses
-        data_elements = None
-        class_used = None
+        # Find ALL data rows across different classes that MIPT uses
+        all_data_elements = []
         
-        for row_class in ['R18', 'R11', 'R19', 'R0']:
+        for row_class in ['R0', 'R11', 'R13', 'R18', 'R19']:
             elements = soup.find_all('tr', class_=row_class)
             if elements:
                 # Check if these are data rows (first cell should be numeric)
-                first_cell = elements[0].find(['td', 'th'])
-                if first_cell and first_cell.get_text().strip().isdigit():
-                    data_elements = elements
-                    class_used = row_class
-                    break
+                for elem in elements:
+                    first_cell = elem.find(['td', 'th'])
+                    if first_cell and first_cell.get_text().strip().isdigit():
+                        all_data_elements.append(elem)
         
-        if not data_elements:
+        if not all_data_elements:
             logger.warning("No data row elements found in HTML")
             return None
         
-        logger.info(f"Found {len(data_elements)} elements with class {class_used}")
+        # Sort by row number (first cell) to get correct order
+        try:
+            all_data_elements.sort(key=lambda elem: int(elem.find(['td', 'th']).get_text().strip()))
+        except (ValueError, AttributeError):
+            logger.warning("Could not sort data elements by row number")
         
-        # Get the last element
-        last_element = data_elements[-1]
+        logger.info(f"Found {len(all_data_elements)} total data rows across all classes")
+        
+        # Get the last element (highest row number)
+        last_element = all_data_elements[-1]
         
         # Extract the first cell which contains the row number (application number)
         first_cell = last_element.find(['td', 'th'])
         
         if first_cell is None:
-            logger.warning(f"Last {class_used} element has no cells")
+            logger.warning(f"Last data element has no cells")
             return None
         
         # Get the text content and convert to integer
@@ -141,7 +145,7 @@ def parse_mipt_html(html_content: str) -> Optional[int]:
                 logger.warning(f"Negative row number value: {count}")
                 return None
                 
-            logger.info(f"Extracted application count from last row (class {class_used}): {count}")
+            logger.info(f"Extracted application count from last row: {count}")
             return count
             
         except (ValueError, TypeError) as e:
