@@ -274,15 +274,15 @@ def main():
         
         # Sync to Google Sheets if configured
         try:
-            from core.google_sheets import sync_to_sheets
-            logger.info("Attempting to sync data to Google Sheets...")
+            from core.dynamic_sheets import update_dynamic_sheets
+            logger.info("Attempting to update dynamic Google Sheets...")
             
-            if sync_to_sheets():
-                logger.info("✅ Successfully synced data to Google Sheets")
+            if update_dynamic_sheets():
+                logger.info("✅ Successfully updated dynamic Google Sheets")
             else:
-                logger.warning("⚠️ Google Sheets sync skipped (not configured or failed)")
+                logger.warning("⚠️ Dynamic Google Sheets update skipped (not configured or failed)")
         except Exception as e:
-            logger.error(f"Google Sheets sync error: {e}")
+            logger.error(f"Dynamic Google Sheets update error: {e}")
             # Don't fail the entire run if sheets sync fails
         
         logger.info("=" * 60)

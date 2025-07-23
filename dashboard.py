@@ -327,17 +327,17 @@ def run_all_scrapers():
                 cleanup_duplicates()
                 logger.info("Duplicate cleanup completed")
                 
-                # Sync to Google Sheets if configured
+                # Update dynamic Google Sheets if configured
                 try:
-                    from core.google_sheets import sync_to_sheets
-                    logger.info("Syncing data to Google Sheets...")
+                    from core.dynamic_sheets import update_dynamic_sheets
+                    logger.info("Updating dynamic Google Sheets...")
                     
-                    if sync_to_sheets():
-                        logger.info("✅ Successfully synced data to Google Sheets")
+                    if update_dynamic_sheets():
+                        logger.info("✅ Successfully updated dynamic Google Sheets")
                     else:
-                        logger.warning("⚠️ Google Sheets sync skipped (not configured)")
+                        logger.warning("⚠️ Dynamic Google Sheets update skipped (not configured)")
                 except Exception as e:
-                    logger.error(f"Google Sheets sync error: {e}")
+                    logger.error(f"Dynamic Google Sheets update error: {e}")
                     # Don't fail the manual run if sheets sync fails
                 
             except Exception as e:
@@ -512,14 +512,14 @@ def sync_to_sheets():
                 date_param = request.json.get('date') if request.json else None
                 target_date = date_param or date.today().isoformat()
                 
-                logger.info(f"Starting manual Google Sheets sync for {target_date}")
+                logger.info(f"Starting manual dynamic Google Sheets update for {target_date}")
                 
-                from core.google_sheets import sync_to_sheets as sync_func
+                from core.dynamic_sheets import update_dynamic_sheets
                 
-                if sync_func(target_date):
-                    logger.info(f"✅ Successfully synced {target_date} to Google Sheets")
+                if update_dynamic_sheets(target_date):
+                    logger.info(f"✅ Successfully updated dynamic Google Sheets for {target_date}")
                 else:
-                    logger.warning(f"⚠️ Google Sheets sync skipped for {target_date} (not configured or no data)")
+                    logger.warning(f"⚠️ Dynamic Google Sheets update skipped for {target_date} (not configured or no data)")
                 
             except Exception as e:
                 logger.error(f"Error in manual Google Sheets sync: {e}")
