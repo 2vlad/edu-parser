@@ -7,10 +7,12 @@ Provides a web interface to view scraping results and system health status.
 
 import os
 import sys
+import csv
+import io
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 
-from flask import Flask, render_template, jsonify, request, abort
+from flask import Flask, render_template, jsonify, request, abort, make_response
 from functools import wraps
 from dotenv import load_dotenv
 
@@ -340,6 +342,146 @@ def run_all_scrapers():
         
     except Exception as e:
         logger.error(f"Run all scrapers error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/export-csv')
+@require_access
+def export_csv():
+    """Export applicant data as CSV file."""
+    try:
+        storage = Storage()
+        
+        # Get date range (last 7 days by default, or specific date from query)
+        date_param = request.args.get('date')
+        if date_param:
+            # Export specific date
+            target_date = date_param
+            date_filter = target_date
+        else:
+            # Export last 7 days
+            end_date = datetime.now().date()
+            start_date = end_date - timedelta(days=6)
+            date_filter = None
+        
+        # Get data from database
+        if date_filter:
+            # Single date
+            result = storage.client.table('applicant_counts')\
+                .select('*')\
+                .eq('date', date_filter)\
+                .order('name')\
+                .execute()
+        else:
+            # Date range
+            result = storage.client.table('applicant_counts')\
+                .select('*')\
+                .gte('date', start_date.isoformat())\
+                .lte('date', end_date.isoformat())\
+                .order('name')\
+                .execute()
+        
+        if not result.data:
+            return jsonify({'error': 'No data found for the specified date(s)'}), 404
+        
+        # Group data by university and program
+        programs_data = {}
+        dates = set()
+        
+        for record in result.data:
+            if record['status'] != 'success' or not record['count']:
+                continue
+                
+            # Determine university from scraper_id or name
+            scraper_id = record['scraper_id']
+            name = record.get('name', scraper_id)
+            
+            if scraper_id.startswith('hse_'):
+                university = 'НИУ ВШЭ'
+            elif scraper_id.startswith('mipt_'):
+                university = 'МФТИ'
+            elif scraper_id.startswith('mephi_'):
+                university = 'МИФИ'
+            else:
+                university = record.get('university', 'Unknown')
+            
+            program_key = f"{university} - {name}"
+            date_str = record['date']
+            dates.add(date_str)
+            
+            if program_key not in programs_data:
+                programs_data[program_key] = {
+                    'university': university,
+                    'program': name,
+                    'url': '',  # We don't store URLs in applicant_counts table
+                    'counts_by_date': {}
+                }
+            
+            programs_data[program_key]['counts_by_date'][date_str] = record['count']
+        
+        # Sort dates
+        sorted_dates = sorted(list(dates))
+        
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        header = ['вуз', 'программа']
+        for date_str in sorted_dates:
+            # Format date as "DD месяц"
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн',
+                     'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+            formatted_date = f"{date_obj.day} {months[date_obj.month - 1]}"
+            header.append(formatted_date)
+        
+        if len(header) > 2:  # Only write if we have date columns
+            header.append('URL')  # Add URL column at the end
+        
+        writer.writerow(header)
+        
+        # Write data rows
+        for program_key in sorted(programs_data.keys()):
+            program_data = programs_data[program_key]
+            row = [
+                program_data['university'],
+                program_data['program']
+            ]
+            
+            # Add counts for each date
+            for date_str in sorted_dates:
+                count = program_data['counts_by_date'].get(date_str, '')
+                row.append(count)
+            
+            # Add URL (empty for now, could be enhanced later)
+            if len(header) > 2:
+                row.append('')
+            
+            writer.writerow(row)
+        
+        # Prepare response
+        output.seek(0)
+        csv_data = output.getvalue()
+        output.close()
+        
+        # Create response with proper headers
+        response = make_response(csv_data)
+        response.headers['Content-Type'] = 'text/csv; charset=utf-8'
+        
+        # Generate filename
+        if date_filter:
+            filename = f"applicant_data_{date_filter}.csv"
+        else:
+            filename = f"applicant_data_{start_date}_to_{end_date}.csv"
+        
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"CSV export completed: {len(programs_data)} programs, {len(sorted_dates)} dates")
+        return response
+        
+    except Exception as e:
+        logger.error(f"CSV export error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
