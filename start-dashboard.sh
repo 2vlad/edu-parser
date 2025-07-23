@@ -9,7 +9,10 @@ if [ -f .env ]; then
 fi
 
 # Set default values if not provided
-export PORT=${PORT:-5000}
+# Railway provides PORT, but sometimes it's empty during cron runs
+if [ -z "$PORT" ]; then
+    export PORT=8080
+fi
 export FLASK_DEBUG=${FLASK_DEBUG:-false}
 
 echo "Starting Edu Parser Dashboard..."
@@ -30,7 +33,7 @@ else
     echo "Workers: $WORKERS"
     
     gunicorn \
-        --bind 0.0.0.0:$PORT \
+        --bind "0.0.0.0:${PORT}" \
         --workers $WORKERS \
         --worker-class sync \
         --timeout 120 \

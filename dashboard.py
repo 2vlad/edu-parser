@@ -339,7 +339,13 @@ def internal_error(error):
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    # Get port with better error handling
+    try:
+        port = int(os.environ.get('PORT', 8080))
+    except (ValueError, TypeError):
+        port = 8080
+        logger.warning(f"Invalid PORT value, using default: {port}")
+    
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     logger.info(f"Starting dashboard on port {port} (debug={debug})")
