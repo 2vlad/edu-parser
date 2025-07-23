@@ -290,7 +290,8 @@ def run_all_scrapers():
     try:
         import threading
         from datetime import date
-        from main import main as run_scrapers
+        # Import main lazily to avoid startup issues
+# from main import main as run_scrapers
         
         def run_scrapers_background():
             try:
@@ -312,9 +313,10 @@ def run_all_scrapers():
                         .execute()
                     logger.info(f"Deleted {len(ids_to_delete)} existing records for {today}")
                 
-                # Run scrapers
+                # Run scrapers with lazy import
                 logger.info("Starting manual scraper run")
-                run_scrapers()
+                from main import main as run_scrapers_func
+                run_scrapers_func()
                 logger.info("Manual scraper run completed")
                 
             except Exception as e:
@@ -354,6 +356,14 @@ if __name__ == '__main__':
     logger.info(f"🔍 DEBUG: __file__ = {__file__}")
     logger.info(f"🔍 DEBUG: sys.argv = {sys.argv}")
     
+    # Read version info
+    try:
+        with open('VERSION', 'r') as f:
+            version = f.read().strip()
+        logger.info(f"🚀 DASHBOARD VERSION: {version}")
+    except:
+        logger.info("🚀 DASHBOARD VERSION: unknown")
+    
     # Log all environment variables related to PORT
     port_env = os.environ.get('PORT')
     logger.info(f"🔍 DEBUG: Raw PORT environment variable = '{port_env}' (type: {type(port_env)})")
@@ -361,31 +371,33 @@ if __name__ == '__main__':
     # Log other relevant env vars
     flask_debug = os.environ.get('FLASK_DEBUG')
     scraper_mode = os.environ.get('SCRAPER_MODE')
+    cache_buster = os.environ.get('CACHE_BUSTER')
     logger.info(f"🔍 DEBUG: FLASK_DEBUG = '{flask_debug}'")
     logger.info(f"🔍 DEBUG: SCRAPER_MODE = '{scraper_mode}'")
+    logger.info(f"🔍 DEBUG: CACHE_BUSTER = '{cache_buster}'")
     
     # Check if we're being imported vs run directly
     logger.info(f"🔍 DEBUG: __name__ = '{__name__}'")
     
-    # Get port with detailed error handling
+    # **CRITICAL FIX:** Handle PORT parsing very carefully
     try:
-        if port_env is None:
+        # If PORT is the literal string '$PORT', Railway has a bug
+        if port_env == '$PORT' or port_env == "'$PORT'" or port_env == '"$PORT"':
+            logger.error(f"🚨 CRITICAL: PORT env var contains literal '$PORT' string: '{port_env}'")
+            logger.error(f"🚨 CRITICAL: This is a Railway environment variable substitution bug!")
             port = 8080
-            logger.info(f"🔍 DEBUG: PORT env var is None, using default: {port}")
-        elif port_env == '':
+            logger.info(f"🔧 FIXED: Using hardcoded port 8080 to bypass Railway bug")
+        elif port_env is None or port_env == '':
             port = 8080
-            logger.info(f"🔍 DEBUG: PORT env var is empty string, using default: {port}")
-        elif port_env == '$PORT':
-            logger.error(f"🚨 DEBUG: PORT env var contains literal '$PORT' - this is the problem!")
-            port = 8080
-            logger.info(f"🔍 DEBUG: Using default port due to $PORT issue: {port}")
+            logger.info(f"🔍 DEBUG: PORT env var is None/empty, using default: {port}")
         else:
+            # Try to parse as integer
             port = int(port_env)
             logger.info(f"🔍 DEBUG: Successfully parsed PORT = {port}")
     except (ValueError, TypeError) as e:
         port = 8080
         logger.error(f"🚨 DEBUG: Failed to parse PORT '{port_env}': {e}")
-        logger.info(f"🔍 DEBUG: Using default port: {port}")
+        logger.info(f"🔧 FIXED: Using default port: {port}")
     
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
@@ -394,6 +406,9 @@ if __name__ == '__main__':
     try:
         app.run(host='0.0.0.0', port=port, debug=debug)
     except Exception as e:
-        logger.error(f"🚨 DEBUG: Failed to start Flask app: {e}")
-        logger.error(f"🚨 DEBUG: Attempted to use port: {port}")
-        raise
+        logger.error(f"🚨 CRITICAL: Failed to start Flask app: {e}")
+        logger.error(f"🚨 CRITICAL: Attempted to use port: {port}")
+        logger.error(f"🚨 CRITICAL: Original PORT env: '{port_env}'")
+        # Don't re-raise - try to continue
+        import time
+        time.sleep(10)  # Wait before exit to see logs
