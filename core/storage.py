@@ -115,6 +115,18 @@ class Storage:
             # Remove None values to let database handle defaults
             data = {k: v for k, v in data.items() if v is not None}
             
+            # UPSERT logic: first delete existing records for this scraper_id + date combination
+            today_str = data['date']
+            logger.debug(f"Performing UPSERT for {scraper_id} on {today_str}")
+            
+            # Delete existing records for this scraper + date
+            delete_response = self.client.table('applicant_counts')\
+                .delete()\
+                .eq('scraper_id', scraper_id)\
+                .eq('date', today_str)\
+                .execute()
+            
+            # Insert new record
             logger.debug(f"Inserting data for {scraper_id}: {data}")
             response = self.client.table('applicant_counts').insert(data).execute()
             
@@ -223,9 +235,22 @@ class Storage:
             return 0
         
         try:
+            # UPSERT logic for batch: first delete all existing records for these scrapers + date
+            scraper_ids = [data['scraper_id'] for data in batch_data]
+            
+            logger.debug(f"Performing batch UPSERT for {len(scraper_ids)} scrapers on {today}")
+            
+            # Delete existing records for these scrapers + date
+            delete_response = self.client.table('applicant_counts')\
+                .delete()\
+                .in_('scraper_id', scraper_ids)\
+                .eq('date', today)\
+                .execute()
+            
+            # Insert new records
             response = self.client.table('applicant_counts').insert(batch_data).execute()
             successful_saves = len(batch_data)
-            logger.info(f"Successfully saved {successful_saves} results in batch")
+            logger.info(f"Successfully saved {successful_saves} results in batch (UPSERT)")
             return successful_saves
             
         except Exception as e:
