@@ -10,6 +10,15 @@
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30
   },
+  "services": {
+    "web": {
+      "startCommand": "python dashboard.py",
+      "healthcheckPath": "/health"
+    },
+    "worker": {
+      "startCommand": "python main.py"
+    }
+  },
   "environments": {
     "production": {
       "variables": {

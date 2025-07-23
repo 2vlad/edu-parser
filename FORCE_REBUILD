@@ -1,3 +1,4 @@
-FORCE_REBUILD_TIMESTAMP_2025_07_23_13_05
+FORCE_REBUILD_TIMESTAMP_2025_07_23_15_05_WEB_SERVICE_RESTORE
 This file forces Railway to rebuild from scratch.
 Every change to this file triggers new deployment.
+Adding Procfile and services config to restore web service.
