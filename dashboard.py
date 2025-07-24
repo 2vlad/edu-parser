@@ -175,20 +175,30 @@ def dashboard():
                     'formatted': date_str
                 })
         
-        # Calculate growth percentages for each program
+        # Calculate growth percentages for each program (earliest to latest)
         for program_key, program_data in programs_data.items():
             counts = program_data['counts_by_date']
             
-            # Get latest two dates with data for this program
+            # Get all dates with data for this program, sorted chronologically
             program_dates = [d for d in unique_dates if d in counts and counts[d] is not None]
+            program_dates.sort()  # Sort chronologically (earliest first)
             
             if len(program_dates) >= 2:
-                latest_count = counts[program_dates[0]]
-                previous_count = counts[program_dates[1]]
+                # Compare earliest vs latest available dates
+                earliest_count = counts[program_dates[0]]   # First (earliest) date
+                latest_count = counts[program_dates[-1]]    # Last (latest) date
                 
-                if previous_count and previous_count > 0:
-                    growth = ((latest_count - previous_count) / previous_count) * 100
+                if earliest_count and earliest_count > 0:
+                    growth = ((latest_count - earliest_count) / earliest_count) * 100
                     program_data['growth_percentage'] = round(growth, 1)
+                    
+                    # Store info about date range for debugging
+                    program_data['growth_period'] = {
+                        'from_date': program_dates[0],
+                        'to_date': program_dates[-1],
+                        'from_count': earliest_count,
+                        'to_count': latest_count
+                    }
                 else:
                     program_data['growth_percentage'] = None
             else:

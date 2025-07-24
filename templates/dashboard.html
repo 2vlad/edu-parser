@@ -374,8 +374,8 @@
             </div>
             
             <div class="stat-card">
-                <h3>Last Updated</h3>
-                <div class="value" style="font-size: 18px;">{{ date.strftime('%d %b') }}</div>
+                <h3>Days Available</h3>
+                <div class="value">{{ date_columns|length }}</div>
             </div>
         </div>
         
@@ -390,7 +390,7 @@
                             {% for date_col in date_columns %}
                                 <th class="date-column">{{ date_col.formatted }}</th>
                             {% endfor %}
-                            <th class="growth-column">Прирост %</th>
+                            <th class="growth-column" title="Прирост от самой ранней до самой поздней доступной даты">Общий прирост %</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -410,7 +410,10 @@
                                 {% endfor %}
                                 <td class="growth-cell">
                                     {% if program_data.growth_percentage is not none %}
-                                        <span class="{% if program_data.growth_percentage > 0 %}growth-positive{% elif program_data.growth_percentage < 0 %}growth-negative{% else %}growth-neutral{% endif %}">
+                                        <span class="{% if program_data.growth_percentage > 0 %}growth-positive{% elif program_data.growth_percentage < 0 %}growth-negative{% else %}growth-neutral{% endif %}"
+                                              {% if program_data.growth_period %}
+                                              title="Рост с {{ program_data.growth_period.from_date }} ({{ program_data.growth_period.from_count }}) до {{ program_data.growth_period.to_date }} ({{ program_data.growth_period.to_count }})"
+                                              {% endif %}>
                                             {% if program_data.growth_percentage > 0 %}+{% endif %}{{ program_data.growth_percentage }}%
                                         </span>
                                     {% else %}
