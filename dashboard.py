@@ -76,14 +76,16 @@ def dashboard():
     try:
         storage = Storage()
         
-        # Get recent dates for navigation (last 7 days with data)
+        # Get all available dates (not just last 7)
         recent_dates_result = storage.client.table('applicant_counts')\
             .select('date')\
+            .eq('status', 'success')\
             .order('date', desc=True)\
-            .limit(30)\
             .execute()
         
-        unique_dates = sorted(list(set(r['date'] for r in recent_dates_result.data)), reverse=True)[:7]
+        # Get unique dates and limit to last 7 for display
+        all_unique_dates = sorted(list(set(r['date'] for r in recent_dates_result.data)), reverse=True)
+        unique_dates = all_unique_dates[:7]  # Limit to 7 most recent dates for display
         
         if not unique_dates:
             # No data available
@@ -381,17 +383,33 @@ def run_all_scrapers():
                         .execute()
                     logger.info(f"Deleted {len(ids_to_delete)} existing records for {today}")
                 
-                # Run scrapers with lazy import
-                logger.info("Starting manual scraper run")
-                from main import main as run_scrapers_func
-                run_scrapers_func()
-                logger.info("Manual scraper run completed")
+                # Run scrapers using subprocess to avoid signal issues
+                logger.info("Starting manual scraper run via subprocess")
+                import subprocess
+                import os
+                
+                # Use subprocess to run scrapers in separate process
+                # Use sys.executable to get the correct Python path
+                import sys
+                result = subprocess.run([
+                    sys.executable, 'main.py'
+                ], cwd=os.getcwd(), capture_output=True, text=True, timeout=600)  # 10 minute timeout
+                
+                if result.returncode == 0:
+                    logger.info("Manual scraper run completed successfully")
+                else:
+                    logger.error(f"Scraper run failed with code {result.returncode}")
+                    logger.error(f"STDOUT: {result.stdout}")
+                    logger.error(f"STDERR: {result.stderr}")
                 
                 # Auto-cleanup any duplicates that might have been created
                 logger.info("Cleaning up any duplicate records")
-                from cleanup_applicant_duplicates import cleanup_duplicates
-                cleanup_duplicates()
-                logger.info("Duplicate cleanup completed")
+                try:
+                    from cleanup_applicant_duplicates import cleanup_duplicates
+                    cleanup_duplicates()
+                    logger.info("Duplicate cleanup completed")
+                except Exception as cleanup_error:
+                    logger.error(f"Cleanup error: {cleanup_error}")
                 
                 # Update dynamic Google Sheets if configured
                 try:
@@ -406,6 +424,8 @@ def run_all_scrapers():
                     logger.error(f"Dynamic Google Sheets update error: {e}")
                     # Don't fail the manual run if sheets sync fails
                 
+            except subprocess.TimeoutExpired:
+                logger.error("Scraper run timed out after 10 minutes")
             except Exception as e:
                 logger.error(f"Error in manual scraper run: {e}")
         
