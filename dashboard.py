@@ -72,68 +72,134 @@ def require_access(f):
 @app.route('/')
 @require_access
 def dashboard():
-    """Main dashboard view showing today's scraping results."""
+    """Main dashboard view showing data like Google Sheets with 7-day columns."""
     try:
         storage = Storage()
         
-        # Get date from query parameter or use today
-        date_str = request.args.get('date')
-        if date_str:
-            try:
-                target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            except ValueError:
-                target_date = datetime.now().date()
-        else:
-            target_date = datetime.now().date()
-        
-        # Get results for the target date
-        results = storage.client.table('applicant_counts')\
-            .select('*')\
-            .eq('date', target_date.isoformat())\
-            .order('name')\
-            .execute()
-        
-        # Calculate statistics
-        total = len(results.data)
-        success = sum(1 for r in results.data if r['status'] == 'success')
-        errors = sum(1 for r in results.data if r['status'] == 'error')
-        success_rate = (success / total * 100) if total > 0 else 0
-        
-        # Group results by university
-        by_university = {}
-        for result in results.data:
-            # Extract university and program from name
-            parts = result['name'].split(' - ')
-            if len(parts) >= 2:
-                university = parts[0]
-                program = ' - '.join(parts[1:])
-            else:
-                university = 'Unknown'
-                program = result['name']
-            
-            if university not in by_university:
-                by_university[university] = []
-            
-            result['university'] = university
-            result['program'] = program
-            by_university[university].append(result)
-        
-        # Get recent dates for navigation
-        recent_dates = storage.client.table('applicant_counts')\
+        # Get recent dates for navigation (last 7 days with data)
+        recent_dates_result = storage.client.table('applicant_counts')\
             .select('date')\
             .order('date', desc=True)\
             .limit(30)\
             .execute()
         
-        unique_dates = sorted(list(set(r['date'] for r in recent_dates.data)), reverse=True)[:7]
+        unique_dates = sorted(list(set(r['date'] for r in recent_dates_result.data)), reverse=True)[:7]
+        
+        if not unique_dates:
+            # No data available
+            return render_template('dashboard.html',
+                date=datetime.now().date(),
+                total=0,
+                success=0,
+                errors=0,
+                success_rate=0,
+                programs_data={},
+                date_columns=[],
+                recent_dates=[]
+            )
+        
+        # Get data for all recent dates
+        start_date = unique_dates[-1] if unique_dates else datetime.now().date().isoformat()
+        end_date = unique_dates[0] if unique_dates else datetime.now().date().isoformat()
+        
+        all_results = storage.client.table('applicant_counts')\
+            .select('*')\
+            .gte('date', start_date)\
+            .lte('date', end_date)\
+            .eq('status', 'success')\
+            .order('name')\
+            .execute()
+        
+        # Calculate statistics for today (most recent date)
+        today_date = unique_dates[0] if unique_dates else datetime.now().date().isoformat()
+        today_results = [r for r in all_results.data if r['date'] == today_date]
+        
+        total = len(today_results)
+        success = len(today_results)  # We only get successful results
+        errors = 0  # We'll calculate this separately if needed
+        success_rate = 100 if total > 0 else 0
+        
+        # Organize data by program (like Google Sheets)
+        programs_data = {}
+        
+        for result in all_results.data:
+            # Determine university from scraper_id
+            scraper_id = result['scraper_id']
+            if scraper_id.startswith('hse_'):
+                university = 'НИУ ВШЭ'
+            elif scraper_id.startswith('mipt_'):
+                university = 'МФТИ'
+            elif scraper_id.startswith('mephi_'):
+                university = 'МИФИ'
+            else:
+                university = 'Unknown'
+            
+            program_name = result.get('name', result['scraper_id'])
+            
+            # Clean program name
+            if program_name.startswith('HSE - '):
+                program_name = program_name[6:]
+            elif program_name.startswith('МФТИ - '):
+                program_name = program_name[7:]
+            elif program_name.startswith('НИЯУ МИФИ - '):
+                program_name = program_name[12:]
+            
+            program_key = f"{university} - {program_name}"
+            
+            if program_key not in programs_data:
+                programs_data[program_key] = {
+                    'university': university,
+                    'program': program_name,
+                    'counts_by_date': {}
+                }
+            
+            programs_data[program_key]['counts_by_date'][result['date']] = result.get('count', 0)
+        
+        # Format date columns for display
+        date_columns = []
+        for date_str in unique_dates:
+            try:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн',
+                         'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+                formatted_date = f"{date_obj.day} {months[date_obj.month - 1]}"
+                date_columns.append({
+                    'date': date_str,
+                    'formatted': formatted_date
+                })
+            except ValueError:
+                date_columns.append({
+                    'date': date_str,
+                    'formatted': date_str
+                })
+        
+        # Calculate growth percentages for each program
+        for program_key, program_data in programs_data.items():
+            counts = program_data['counts_by_date']
+            
+            # Get latest two dates with data for this program
+            program_dates = [d for d in unique_dates if d in counts and counts[d] is not None]
+            
+            if len(program_dates) >= 2:
+                latest_count = counts[program_dates[0]]
+                previous_count = counts[program_dates[1]]
+                
+                if previous_count and previous_count > 0:
+                    growth = ((latest_count - previous_count) / previous_count) * 100
+                    program_data['growth_percentage'] = round(growth, 1)
+                else:
+                    program_data['growth_percentage'] = None
+            else:
+                program_data['growth_percentage'] = None
         
         return render_template('dashboard.html',
-            date=target_date,
+            date=datetime.strptime(today_date, '%Y-%m-%d').date() if unique_dates else datetime.now().date(),
             total=total,
             success=success,
             errors=errors,
             success_rate=success_rate,
-            results_by_university=by_university,
+            programs_data=programs_data,
+            date_columns=date_columns,
             recent_dates=unique_dates
         )
         
