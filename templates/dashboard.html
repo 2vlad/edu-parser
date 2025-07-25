@@ -359,6 +359,10 @@
             <button onclick="syncToSheets()" class="btn-primary">
                 📈 Sync to Sheets
             </button>
+            
+            <button onclick="showDateSyncModal()" class="btn-primary">
+                📅 Sync Specific Date
+            </button>
         </div>
         
         <!-- Statistics -->
@@ -597,6 +601,45 @@
                     button.disabled = false;
                     button.innerHTML = originalText;
                 }, 3000);
+            }
+        }
+        
+        // Show date sync modal
+        function showDateSyncModal() {
+            const date = prompt('Введите дату для синхронизации (YYYY-MM-DD):\nНапример: 2025-07-24');
+            
+            if (date) {
+                // Validate date format
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                    showToast('Неверный формат даты. Используйте YYYY-MM-DD', 'error');
+                    return;
+                }
+                
+                syncSpecificDate(date);
+            }
+        }
+        
+        // Sync specific date function
+        async function syncSpecificDate(date) {
+            try {
+                const response = await fetch('/api/sync-date', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ date: date })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast(`Синхронизация ${date} запущена! Проверьте логи для подробностей.`, 'success');
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                showToast(`Ошибка синхронизации даты: ${error.message}`, 'error');
             }
         }
         
