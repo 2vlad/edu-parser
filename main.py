@@ -10,7 +10,7 @@ import os
 import sys
 import time
 import signal
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Dict, Any
 
 # Add project root to path
@@ -292,7 +292,6 @@ def main():
             try:
                 logger.info("🔍 Verifying Google Sheets sync...")
                 import subprocess
-                import sys
                 
                 # Run verification script
                 result = subprocess.run([
