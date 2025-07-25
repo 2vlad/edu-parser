@@ -367,6 +367,10 @@
             <button onclick="fixProgramNames()" class="btn-warning">
                 🔧 Fix Program Names
             </button>
+            
+            <button onclick="verifySync()" class="btn-primary">
+                🔍 Verify Sync
+            </button>
         </div>
         
         <!-- Statistics -->
@@ -672,6 +676,30 @@
                 
             } catch (error) {
                 showToast(`Ошибка исправления названий: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verify sync function
+        async function verifySync() {
+            try {
+                const response = await fetch('/api/verify-sync', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ date: new Date().toISOString().split('T')[0] })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast('Проверка синхронизации запущена! Результаты в логах.', 'success');
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                showToast(`Ошибка проверки синхронизации: ${error.message}`, 'error');
             }
         }
         

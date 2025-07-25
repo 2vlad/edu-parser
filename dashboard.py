@@ -803,6 +803,56 @@ def fix_program_names():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/verify-sync', methods=['POST'])
+@require_access
+def verify_sync():
+    """Verify Google Sheets sync for a specific date."""
+    try:
+        import threading
+        import subprocess
+        import sys
+        
+        # Get date parameter
+        request_data = request.json if request.json else {}
+        target_date = request_data.get('date') or date.today().isoformat()
+        
+        def verify_background():
+            try:
+                logger.info(f"Starting Google Sheets sync verification for {target_date}")
+                
+                # Run verification script
+                result = subprocess.run([
+                    sys.executable, 'verify_sheets_sync.py', target_date
+                ], cwd=os.getcwd(), capture_output=True, text=True, timeout=120)
+                
+                if result.returncode == 0:
+                    logger.info(f"✅ Google Sheets sync verification PASSED for {target_date}")
+                else:
+                    logger.warning(f"⚠️ Google Sheets sync verification FAILED for {target_date}")
+                    if result.stdout:
+                        logger.info(f"Verification details: {result.stdout}")
+                
+            except subprocess.TimeoutExpired:
+                logger.error("Google Sheets sync verification timed out")
+            except Exception as e:
+                logger.error(f"Error in Google Sheets sync verification: {e}")
+        
+        # Run verification in background
+        thread = threading.Thread(target=verify_background)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'date': target_date,
+            'message': f'Sync verification started for {target_date}. Check logs for detailed results.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Verify sync error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""

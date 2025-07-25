@@ -273,17 +273,43 @@ def main():
             sys.exit(1)
         
         # Sync to Google Sheets if configured
+        sheets_sync_success = False
         try:
             from core.dynamic_sheets import update_dynamic_sheets
             logger.info("Attempting to update dynamic Google Sheets...")
             
             if update_dynamic_sheets():
                 logger.info("✅ Successfully updated dynamic Google Sheets")
+                sheets_sync_success = True
             else:
                 logger.warning("⚠️ Dynamic Google Sheets update skipped (not configured or failed)")
         except Exception as e:
             logger.error(f"Dynamic Google Sheets update error: {e}")
             # Don't fail the entire run if sheets sync fails
+        
+        # Verify sync if it was successful
+        if sheets_sync_success:
+            try:
+                logger.info("🔍 Verifying Google Sheets sync...")
+                import subprocess
+                import sys
+                
+                # Run verification script
+                result = subprocess.run([
+                    sys.executable, 'verify_sheets_sync.py', date.today().isoformat()
+                ], cwd=os.getcwd(), capture_output=True, text=True, timeout=120)
+                
+                if result.returncode == 0:
+                    logger.info("✅ Google Sheets sync verification: PASSED")
+                else:
+                    logger.warning("⚠️ Google Sheets sync verification: ISSUES DETECTED")
+                    logger.warning(f"Verification output: {result.stdout}")
+                    
+            except subprocess.TimeoutExpired:
+                logger.warning("⚠️ Google Sheets sync verification timed out")
+            except Exception as e:
+                logger.warning(f"⚠️ Google Sheets sync verification error: {e}")
+                # Don't fail if verification fails
         
         logger.info("=" * 60)
         logger.info("SCRAPING SESSION COMPLETED SUCCESSFULLY")
