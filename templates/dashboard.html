@@ -622,7 +622,8 @@
         // Sync specific date function
         async function syncSpecificDate(date) {
             try {
-                const response = await fetch('/api/sync-date', {
+                // Use existing sync-to-sheets endpoint with date parameter
+                const response = await fetch('/api/sync-to-sheets', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
