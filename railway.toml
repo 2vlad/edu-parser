@@ -13,4 +13,4 @@ restartPolicyMaxRetries = 3
 name = "scraper"
 startCommand = "./start-scraper.sh"
 restartPolicyType = "NEVER"
-cronSchedule = "0 6 * * *"
+cronSchedule = "59 20 * * *"

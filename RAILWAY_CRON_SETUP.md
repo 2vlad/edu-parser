@@ -28,7 +28,8 @@ For Moscow time (UTC+3), use:
 RAILWAY_CRON_SCHEDULE=59 20 * * *
 ```
 
-This runs at 20:59 UTC = 23:59 MSK.
+This runs at 20:59 UTC = 23:59 MSK (11:59 PM Moscow time).
+This timing ensures data collection happens at the end of each business day.
 
 ### 2. Deploy Configuration
 

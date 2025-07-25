@@ -10,7 +10,7 @@ This project automates the daily manual process of collecting applicant statisti
 
 - ✅ Automated scraping of HTML tables and Excel files
 - ✅ Support for 30+ university programs across HSE, MIPT, and MEPhI
-- ✅ Daily scheduled runs via Railway cron jobs
+- ✅ Daily scheduled runs via Railway cron jobs (23:59 MSK)
 - ✅ Cloud storage with Supabase
 - ✅ Error isolation - one scraper failure doesn't affect others
 - ✅ Google Sheets synchronization (optional)
