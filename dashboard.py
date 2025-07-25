@@ -703,6 +703,61 @@ def sync_specific_date():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/debug-program', methods=['GET'])
+@require_access
+def debug_program():
+    """Debug specific program data."""
+    try:
+        program_name = request.args.get('name', '').lower()
+        scraper_id = request.args.get('scraper_id', '')
+        
+        storage = Storage()
+        
+        # Search for programs containing the name
+        if program_name:
+            # Search by name pattern
+            result = storage.client.table('applicant_counts')\
+                .select('scraper_id, name, date, count, status')\
+                .ilike('name', f'%{program_name}%')\
+                .order('date', desc=True)\
+                .limit(10)\
+                .execute()
+        elif scraper_id:
+            # Search by specific scraper_id
+            result = storage.client.table('applicant_counts')\
+                .select('scraper_id, name, date, count, status')\
+                .eq('scraper_id', scraper_id)\
+                .order('date', desc=True)\
+                .limit(10)\
+                .execute()
+        else:
+            return jsonify({'error': 'Provide either name or scraper_id parameter'}), 400
+        
+        # Also check scraper config
+        config_result = storage.client.table('scrapers_config')\
+            .select('*')\
+            .execute()
+        
+        # Filter configs by name or id
+        relevant_configs = []
+        for config in config_result.data:
+            if program_name and program_name in config.get('name', '').lower():
+                relevant_configs.append(config)
+            elif scraper_id and config.get('scraper_id') == scraper_id:
+                relevant_configs.append(config)
+        
+        return jsonify({
+            'search_term': program_name or scraper_id,
+            'data_records': result.data,
+            'scraper_configs': relevant_configs,
+            'total_records': len(result.data)
+        })
+        
+    except Exception as e:
+        logger.error(f"Debug program error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
