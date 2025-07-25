@@ -8,6 +8,7 @@ and applicant counts are updated in the corresponding rows.
 
 import os
 import json
+import time
 from datetime import datetime, date
 from typing import Dict, List, Any, Optional, Tuple
 from dotenv import load_dotenv
@@ -221,30 +222,55 @@ class DynamicSheetsManager:
                 }
             ]
             
-            # Execute the column insertion
-            self.service.spreadsheets().batchUpdate(
-                spreadsheetId=self.spreadsheet_id,
-                body={'requests': requests}
-            ).execute()
+            # Execute the column insertion with retry
+            def insert_column():
+                return self.service.spreadsheets().batchUpdate(
+                    spreadsheetId=self.spreadsheet_id,
+                    body={'requests': requests}
+                ).execute()
+            
+            self._retry_with_backoff(
+                insert_column,
+                f"Insert column for {target_date}",
+                max_retries=5
+            )
             
             # Convert column index to letter (A, B, C, ...)
             column_letter = chr(ord('A') + insert_column_index)
             
-            # Add header for the new date column
+            # Add header for the new date column with retry
             range_name = f"{self.master_sheet_name}!{column_letter}1"
             
-            self.service.spreadsheets().values().update(
-                spreadsheetId=self.spreadsheet_id,
-                range=range_name,
-                valueInputOption='RAW',
-                body={'values': [[target_date]]}
-            ).execute()
+            def add_header():
+                return self.service.spreadsheets().values().update(
+                    spreadsheetId=self.spreadsheet_id,
+                    range=range_name,
+                    valueInputOption='RAW',
+                    body={'values': [[target_date]]}
+                ).execute()
+            
+            self._retry_with_backoff(
+                add_header,
+                f"Add header for {target_date}",
+                max_retries=3
+            )
             
             # Format the header
-            self._format_date_header(insert_column_index)
+            try:
+                self._format_date_header(insert_column_index)
+            except Exception as e:
+                logger.warning(f"Failed to format header, continuing: {e}")
             
-            logger.info(f"Added date column '{target_date}' at index {insert_column_index} (reverse chronological order)")
-            return insert_column_index
+            # Verify the column was created correctly
+            logger.info(f"Verifying column creation for {target_date}...")
+            time.sleep(1)  # Brief pause for Google Sheets to process
+            
+            if self._verify_column_exists(target_date, insert_column_index):
+                logger.info(f"✅ Added date column '{target_date}' at index {insert_column_index} (reverse chronological order)")
+                return insert_column_index
+            else:
+                logger.error(f"❌ Column verification failed for {target_date}")
+                return None
             
         except Exception as e:
             logger.error(f"Failed to add date column: {e}")
@@ -543,6 +569,99 @@ class DynamicSheetsManager:
             logger.error(f"Failed to add missing programs: {e}")
             return 0
 
+    def _retry_with_backoff(self, operation_func, operation_name: str, max_retries: int = 3) -> Any:
+        """
+        Execute an operation with exponential backoff retry.
+        
+        Args:
+            operation_func: Function to execute
+            operation_name: Name of the operation for logging
+            max_retries: Maximum number of retry attempts
+            
+        Returns:
+            Result of the operation
+            
+        Raises:
+            Exception: If all retries fail
+        """
+        for attempt in range(max_retries):
+            try:
+                result = operation_func()
+                if attempt > 0:
+                    logger.info(f"✅ {operation_name} succeeded on attempt {attempt + 1}")
+                return result
+            except Exception as e:
+                wait_time = (2 ** attempt) + 1  # 1, 3, 5 seconds
+                if attempt < max_retries - 1:
+                    logger.warning(f"⚠️ {operation_name} failed on attempt {attempt + 1}: {e}")
+                    logger.info(f"⏳ Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"❌ {operation_name} failed after {max_retries} attempts: {e}")
+                    raise
+    
+    def _verify_column_exists(self, target_date: str, expected_index: int) -> bool:
+        """
+        Verify that a date column was actually created at the expected position.
+        
+        Args:
+            target_date: Date string to verify (e.g., '25 июл')
+            expected_index: Expected column index
+            
+        Returns:
+            True if column exists at expected position, False otherwise
+        """
+        try:
+            data = self.get_sheet_data()
+            if not data or len(data) < 1:
+                return False
+            
+            header_row = data[0]
+            if expected_index >= len(header_row):
+                return False
+                
+            actual_header = header_row[expected_index].strip()
+            return actual_header == target_date
+        except Exception as e:
+            logger.warning(f"Failed to verify column existence: {e}")
+            return False
+    
+    def _verify_data_written(self, column_index: int, expected_records: int) -> bool:
+        """
+        Verify that data was actually written to the specified column.
+        
+        Args:
+            column_index: Column index to verify
+            expected_records: Expected number of non-empty records
+            
+        Returns:
+            True if data verification passes, False otherwise
+        """
+        try:
+            data = self.get_sheet_data()
+            if not data or len(data) < 2:
+                return False
+            
+            # Count non-empty cells in the column (skip header)
+            non_empty_count = 0
+            for row in data[1:]:  # Skip header row
+                if column_index < len(row) and str(row[column_index]).strip():
+                    non_empty_count += 1
+            
+            # Allow some tolerance (90% of expected records)
+            min_expected = max(1, int(expected_records * 0.9))
+            success = non_empty_count >= min_expected
+            
+            if success:
+                logger.info(f"✅ Data verification passed: {non_empty_count}/{expected_records} records written")
+            else:
+                logger.warning(f"⚠️ Data verification failed: only {non_empty_count}/{expected_records} records written")
+                
+            return success
+        except Exception as e:
+            logger.warning(f"Failed to verify data: {e}")
+            return False
+
     def clear_column_data(self, column_index: int) -> bool:
         """
         Clear all data in a specific column except the header.
@@ -688,18 +807,54 @@ class DynamicSheetsManager:
                 })
                 updated_count += 1
             
-            # Apply all updates in batch
+            # Apply all updates in batch with retry logic and verification
             if updates:
-                self.service.spreadsheets().values().batchUpdate(
-                    spreadsheetId=self.spreadsheet_id,
-                    body={
-                        'valueInputOption': 'RAW',
-                        'data': updates
-                    }
-                ).execute()
+                def perform_batch_update():
+                    return self.service.spreadsheets().values().batchUpdate(
+                        spreadsheetId=self.spreadsheet_id,
+                        body={
+                            'valueInputOption': 'RAW',
+                            'data': updates
+                        }
+                    ).execute()
                 
-                logger.info(f"Successfully updated {updated_count} programs for {formatted_date} (column {column_index})")
-                return True
+                # Perform batch update with retry
+                self._retry_with_backoff(
+                    perform_batch_update,
+                    f"Batch update for {formatted_date}",
+                    max_retries=5
+                )
+                
+                # Verify the data was actually written
+                logger.info(f"Verifying data write for {formatted_date}...")
+                verification_attempts = 0
+                max_verification_attempts = 3
+                
+                while verification_attempts < max_verification_attempts:
+                    # Wait a moment for Google Sheets to process the update
+                    time.sleep(2)
+                    
+                    if self._verify_data_written(column_index, updated_count):
+                        logger.info(f"✅ Successfully updated {updated_count} programs for {formatted_date} (column {column_index})")
+                        return True
+                    
+                    verification_attempts += 1
+                    if verification_attempts < max_verification_attempts:
+                        logger.warning(f"Data verification failed, attempt {verification_attempts}/{max_verification_attempts}")
+                        logger.info("Retrying batch update...")
+                        
+                        # Retry the batch update
+                        self._retry_with_backoff(
+                            perform_batch_update,
+                            f"Retry batch update for {formatted_date}",
+                            max_retries=3
+                        )
+                
+                # If we get here, verification failed multiple times
+                logger.error(f"❌ Data verification failed after {max_verification_attempts} attempts for {formatted_date}")
+                logger.error("Data may not have been written correctly to Google Sheets")
+                return False
+                
             else:
                 logger.warning("No programs to update")
                 return False
