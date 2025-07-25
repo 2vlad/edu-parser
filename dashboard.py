@@ -637,6 +637,72 @@ def sync_to_sheets():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/sync-date', methods=['POST'])
+@require_access
+def sync_specific_date():
+    """Sync a specific date to Google Sheets."""
+    try:
+        import threading
+        
+        # Get date parameter from request
+        request_data = request.json if request.json else {}
+        target_date = request_data.get('date')
+        
+        if not target_date:
+            return jsonify({'error': 'Date parameter is required'}), 400
+        
+        # Validate date format
+        try:
+            from datetime import datetime
+            datetime.strptime(target_date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        
+        def sync_background():
+            try:
+                logger.info(f"Starting specific date sync for {target_date}")
+                
+                # Check if we have data for this date
+                storage = Storage()
+                result = storage.client.table('applicant_counts')\
+                    .select('count()')\
+                    .eq('date', target_date)\
+                    .eq('status', 'success')\
+                    .execute()
+                
+                if not result.data or result.data[0]['count'] == 0:
+                    logger.warning(f"No data found in database for {target_date}")
+                    return
+                
+                record_count = result.data[0]['count']
+                logger.info(f"Found {record_count} records for {target_date}")
+                
+                from core.dynamic_sheets import update_dynamic_sheets
+                
+                if update_dynamic_sheets(target_date):
+                    logger.info(f"✅ Successfully synced {target_date} to Google Sheets")
+                else:
+                    logger.error(f"❌ Failed to sync {target_date} to Google Sheets")
+                
+            except Exception as e:
+                logger.error(f"Error in specific date sync for {target_date}: {e}")
+        
+        # Run sync in background
+        thread = threading.Thread(target=sync_background)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'date': target_date,
+            'message': f'Sync started for {target_date}. Check logs for detailed results.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Specific date sync error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
