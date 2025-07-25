@@ -758,6 +758,51 @@ def debug_program():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/fix-program-names', methods=['POST'])
+@require_access
+def fix_program_names():
+    """Fix program names in Google Sheets to match database format."""
+    try:
+        import threading
+        import subprocess
+        import sys
+        
+        def fix_names_background():
+            try:
+                logger.info("Starting program names fix in Google Sheets")
+                
+                # Run the fix script
+                result = subprocess.run([
+                    sys.executable, 'fix_program_names_in_sheets.py'
+                ], cwd=os.getcwd(), capture_output=True, text=True, timeout=300)
+                
+                if result.returncode == 0:
+                    logger.info("✅ Successfully fixed program names in Google Sheets")
+                else:
+                    logger.error(f"❌ Program names fix failed with code {result.returncode}")
+                    logger.error(f"STDOUT: {result.stdout}")
+                    logger.error(f"STDERR: {result.stderr}")
+                
+            except subprocess.TimeoutExpired:
+                logger.error("Program names fix timed out after 5 minutes")
+            except Exception as e:
+                logger.error(f"Error in program names fix: {e}")
+        
+        # Run fix in background
+        thread = threading.Thread(target=fix_names_background)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'status': 'started',
+            'message': 'Program names fix started. Check logs for detailed results.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Fix program names error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
