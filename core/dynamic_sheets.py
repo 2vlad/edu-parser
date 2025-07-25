@@ -200,13 +200,11 @@ class DynamicSheetsManager:
                     except (ValueError, KeyError):
                         continue
             
-            # If we went through all columns and didn't find a place, append at the end of date columns
-            # But we need to count only non-empty date columns
+            # If we went through all columns and didn't find a place, 
+            # insert at the beginning of date columns (most recent date goes first)
             if insert_column_index == static_columns:
-                # Count actual date columns (non-empty headers after static columns)
-                for i in range(static_columns, len(header_row)):
-                    if header_row[i].strip():
-                        insert_column_index = i + 1
+                # For reverse chronological order, newest dates go right after static columns
+                insert_column_index = static_columns  # Insert at column D (index 3)
             
             # Insert a new column at the calculated position
             requests = [
